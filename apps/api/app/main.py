@@ -13,17 +13,11 @@ from app.routers.stacks import router as stacks_router
 from app.routers.invite import router as invite_router
 from app.routers.media import router as media_router
 from app.routers.admin_import import router as admin_router  # si tu veux l'import zip
+from app.routers.admin_migrate import router as admin_migrate_router
 
 setup_logging()
 
 app = FastAPI(title="Selection Neuro API", version="0.1.0")
-
-
-@app.on_event("startup")
-def on_startup():
-    run_migrations()
-    import logging
-    logging.getLogger("app").info("Startup complete.")
 
 
 app.add_middleware(
@@ -46,3 +40,4 @@ app.include_router(stacks_router)
 app.include_router(invite_router)
 app.include_router(media_router)
 app.include_router(admin_router)
+app.include_router(admin_migrate_router)
