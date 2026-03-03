@@ -19,6 +19,9 @@ class Product(Base):
 
     category: Mapped[str] = mapped_column(String(80), default="")
 
+    # ✅ match DB column (0001_init_schema)
+    image_path: Mapped[str] = mapped_column(String(400), default="")
+
     # pricing
     price_month_eur: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
 
@@ -30,7 +33,6 @@ class Product(Base):
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    # relations
     stack_products = relationship(
         "StackProduct",
         back_populates="product",
