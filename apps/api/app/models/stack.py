@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from sqlalchemy import String, Text, Integer, Boolean
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
@@ -17,3 +17,11 @@ class Stack(Base):
     description: Mapped[str] = mapped_column(Text, default="")
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    # relations
+    stack_products = relationship(
+        "StackProduct",
+        back_populates="stack",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )

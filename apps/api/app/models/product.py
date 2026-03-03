@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from sqlalchemy import String, Text, Integer, Boolean, Numeric
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
@@ -22,3 +22,11 @@ class Product(Base):
     price_month_eur: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    # relations
+    stack_products = relationship(
+        "StackProduct",
+        back_populates="product",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )

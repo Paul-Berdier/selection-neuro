@@ -1,0 +1,15 @@
+from __future__ import annotations
+
+from pydantic import BaseModel
+
+
+class StackProductOut(BaseModel):
+    product_slug: str
+    product_name: str
+    product_short_desc: str = ""
+    product_category: str = ""
+    dosage_value: float | None = None
+    dosage_unit: str = ""
+    note: str = ""
+
+    model_config = {"from_attributes": True}

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from app.schemas.stack_product import StackProductOut
 
 
 class StackOut(BaseModel):
@@ -8,6 +10,7 @@ class StackOut(BaseModel):
     title: str
     subtitle: str = ""
     description: str = ""
+    products: list[StackProductOut] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
 

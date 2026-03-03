@@ -1,21 +1,11 @@
 import { Section } from "@/components/Section";
 import { Button } from "@/components/Button";
+import { Card } from "@/components/Card";
+import { Badge } from "@/components/Badge";
 import { apiGet, apiPost } from "@/lib/api";
+import type { Product, Stack } from "@/lib/types";
 
-type Product = {
-  slug: string;
-  name: string;
-  short_desc: string;
-  category: string;
-  price_month_eur?: number | null;
-};
-
-type Stack = {
-  slug: string;
-  title: string;
-  subtitle: string;
-  description: string;
-};
+export const dynamic = "force-dynamic";
 
 async function getHomeData() {
   const [products, stacks] = await Promise.all([
@@ -38,7 +28,7 @@ export default async function HomePage() {
               Selection Neuro – Blagnac
             </h1>
             <p className="mt-5 text-lg text-neutral-600">
-              Front Next.js propre + API FastAPI + DB Postgres.
+              Front Next.js + API FastAPI + Postgres. Pages dédiées stacks & produits.
             </p>
             <div className="mt-8 flex gap-3">
               <Button href="#stacks">Voir les stacks</Button>
@@ -47,7 +37,7 @@ export default async function HomePage() {
               </Button>
             </div>
             <div className="mt-6 text-sm text-neutral-500">
-              Démo: les stacks / produits viennent de l’API.
+              Données servies par l’API (seed/import Notion ensuite).
             </div>
           </div>
 
@@ -61,17 +51,22 @@ export default async function HomePage() {
       <Section
         id="stacks"
         title="Stacks"
-        subtitle="Récupérés via GET /stacks (API FastAPI)."
+        subtitle="GET /stacks — chaque stack a sa page dédiée."
       >
         <div className="grid gap-6 md:grid-cols-3">
           {stacks.map((s) => (
-            <div key={s.slug} className="rounded-2xl border p-6">
-              <div className="font-semibold">{s.title}</div>
-              <p className="mt-2 text-sm text-neutral-600">{s.subtitle}</p>
-              <p className="mt-3 text-sm text-neutral-600 line-clamp-3">
-                {s.description}
-              </p>
-            </div>
+            <a key={s.slug} className="no-underline" href={`/stacks/${s.slug}`}>
+              <Card className="hover:bg-neutral-50 transition">
+                <div className="font-semibold">{s.title}</div>
+                <p className="mt-2 text-sm text-neutral-600">{s.subtitle}</p>
+                <p className="mt-3 text-sm text-neutral-600 line-clamp-3">
+                  {s.description}
+                </p>
+                <div className="mt-4 text-sm text-neutral-500">
+                  {s.products?.length ? `${s.products.length} produits` : "—"}
+                </div>
+              </Card>
+            </a>
           ))}
         </div>
       </Section>
@@ -79,18 +74,29 @@ export default async function HomePage() {
       <Section
         id="produits"
         title="Produits"
-        subtitle="Récupérés via GET /products (API FastAPI)."
+        subtitle="GET /products — page liste + fiche produit."
       >
-        <div className="grid gap-6 md:grid-cols-3">
-          {products.map((p) => (
-            <div key={p.slug} className="rounded-2xl border p-6">
-              <div className="font-semibold">{p.name}</div>
-              <p className="mt-2 text-sm text-neutral-600">{p.short_desc}</p>
-              <div className="mt-4 text-sm text-neutral-500">
-                {p.category || "—"}{" "}
-                {p.price_month_eur != null ? `· ${p.price_month_eur}€/mois` : ""}
-              </div>
-            </div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="text-sm text-neutral-600">
+            {products.length} produits disponibles.
+          </div>
+          <Button href="/produits" variant="secondary">Voir tout</Button>
+        </div>
+
+        <div className="mt-6 grid gap-6 md:grid-cols-3">
+          {products.slice(0, 6).map((p) => (
+            <a key={p.slug} className="no-underline" href={`/produits/${p.slug}`}>
+              <Card className="hover:bg-neutral-50 transition">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="font-semibold">{p.name}</div>
+                  {p.category ? <Badge>{p.category}</Badge> : null}
+                </div>
+                <p className="mt-2 text-sm text-neutral-600">{p.short_desc}</p>
+                <div className="mt-4 text-sm text-neutral-500">
+                  {p.price_month_eur != null ? `${p.price_month_eur}€ / mois` : "—"}
+                </div>
+              </Card>
+            </a>
           ))}
         </div>
       </Section>
@@ -111,8 +117,6 @@ function InviteForm() {
       goal: String(formData.get("goal") || ""),
       message: String(formData.get("message") || ""),
     };
-
-    // server action: appel API depuis le serveur Next
     await apiPost<{ ok: boolean }>("/invite", payload);
   }
 
