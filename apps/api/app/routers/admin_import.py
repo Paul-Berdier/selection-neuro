@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.core.auth import require_admin_token
-from scripts.notion_import.import_zip import run_import
+from app.importers.notion_import import run_import
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
