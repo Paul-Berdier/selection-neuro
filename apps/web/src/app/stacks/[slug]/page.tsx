@@ -15,9 +15,10 @@ function formatDosage(v?: number | null, unit?: string) {
 export default async function StackDetailPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const s = await apiGet<Stack>(`/stacks/${params.slug}`);
+  const { slug } = await params;
+  const s = await apiGet<Stack>(`/stacks/${slug}`);
 
   return (
     <>
@@ -59,14 +60,16 @@ export default async function StackDetailPage({
                               </div>
                             ) : null}
                           </td>
-                          <td className="px-4 py-3">{formatDosage(sp.dosage_value, sp.dosage_unit)}</td>
+                          <td className="px-4 py-3">
+                            {formatDosage(sp.dosage_value, sp.dosage_unit)}
+                          </td>
                           <td className="px-4 py-3 text-neutral-600">{sp.note || "—"}</td>
                         </tr>
                       ))}
                       {s.products.length === 0 ? (
                         <tr>
                           <td className="px-4 py-3 text-neutral-600" colSpan={3}>
-                            Aucun produit associé (à remplir via seed/import).
+                            Aucun produit associé (seed/import).
                           </td>
                         </tr>
                       ) : null}
@@ -81,9 +84,15 @@ export default async function StackDetailPage({
             <Card>
               <div className="text-sm font-medium">Navigation</div>
               <div className="mt-3 flex flex-col gap-2 text-sm">
-                <a className="no-underline hover:underline" href="/#stacks">← Retour landing</a>
-                <a className="no-underline hover:underline" href="/produits">Voir tous les produits</a>
-                <a className="no-underline hover:underline" href="/#invite">Demander une invitation</a>
+                <a className="no-underline hover:underline" href="/#stacks">
+                  ← Retour landing
+                </a>
+                <a className="no-underline hover:underline" href="/produits">
+                  Voir tous les produits
+                </a>
+                <a className="no-underline hover:underline" href="/#invite">
+                  Demander une invitation
+                </a>
               </div>
             </Card>
           </div>
