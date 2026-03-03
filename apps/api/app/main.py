@@ -22,6 +22,8 @@ app = FastAPI(title="Selection Neuro API", version="0.1.0")
 @app.on_event("startup")
 def on_startup():
     run_migrations()
+    import logging
+    logging.getLogger("app").info("Startup complete.")
 
 
 app.add_middleware(
