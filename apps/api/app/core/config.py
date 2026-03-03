@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     )
     # Comma-separated origins, ex: "http://localhost:3000,https://site.com"
     CORS_ORIGINS: str = Field(default="http://localhost:3000")
+    ADMIN_TOKEN: str = Field(default="")
 
     @property
     def database_url(self) -> str:
