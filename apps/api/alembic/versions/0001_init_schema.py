@@ -1,10 +1,3 @@
-"""init schema (products, stacks, benefits, studies, invites)
-
-Revision ID: 0001_init_schema
-Revises:
-Create Date: 2026-03-03
-"""
-
 from __future__ import annotations
 
 from alembic import op
@@ -18,7 +11,6 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # product
     op.create_table(
         "product",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
@@ -28,6 +20,7 @@ def upgrade() -> None:
         sa.Column("description_md", sa.Text(), nullable=False, server_default=""),
         sa.Column("category", sa.String(length=80), nullable=False, server_default=""),
         sa.Column("image_path", sa.String(length=400), nullable=False, server_default=""),
+        sa.Column("price_month_eur", sa.Numeric(10, 2), nullable=True),  # ✅ PRIX
         sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
@@ -36,7 +29,6 @@ def upgrade() -> None:
     op.create_index("ix_product_slug", "product", ["slug"], unique=True)
     op.create_index("ix_product_active", "product", ["is_active"], unique=False)
 
-    # stack
     op.create_table(
         "stack",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
@@ -52,7 +44,6 @@ def upgrade() -> None:
     op.create_index("ix_stack_slug", "stack", ["slug"], unique=True)
     op.create_index("ix_stack_active", "stack", ["is_active"], unique=False)
 
-    # stack_product pivot
     op.create_table(
         "stack_product",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
@@ -67,7 +58,6 @@ def upgrade() -> None:
     op.create_index("ix_stack_product_stack_id", "stack_product", ["stack_id"], unique=False)
     op.create_index("ix_stack_product_product_id", "stack_product", ["product_id"], unique=False)
 
-    # benefit
     op.create_table(
         "benefit",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
@@ -81,7 +71,6 @@ def upgrade() -> None:
     op.create_index("ix_benefit_slug", "benefit", ["slug"], unique=True)
     op.create_index("ix_benefit_active", "benefit", ["is_active"], unique=False)
 
-    # product_benefit pivot
     op.create_table(
         "product_benefit",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
@@ -94,7 +83,6 @@ def upgrade() -> None:
     op.create_index("ix_product_benefit_product_id", "product_benefit", ["product_id"], unique=False)
     op.create_index("ix_product_benefit_benefit_id", "product_benefit", ["benefit_id"], unique=False)
 
-    # study
     op.create_table(
         "study",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
@@ -110,7 +98,6 @@ def upgrade() -> None:
     )
     op.create_index("ix_study_slug", "study", ["slug"], unique=True)
 
-    # product_study pivot
     op.create_table(
         "product_study",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
@@ -122,7 +109,6 @@ def upgrade() -> None:
     op.create_index("ix_product_study_product_id", "product_study", ["product_id"], unique=False)
     op.create_index("ix_product_study_study_id", "product_study", ["study_id"], unique=False)
 
-    # invite_request
     op.create_table(
         "invite_request",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),

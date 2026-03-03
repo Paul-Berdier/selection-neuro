@@ -5,19 +5,24 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.logging import setup_logging
-from app.routers import health_router, products_router, stacks_router, invite_router
 from app.core.migrate import run_migrations
+
+from app.routers.health import router as health_router
+from app.routers.products import router as products_router
+from app.routers.stacks import router as stacks_router
+from app.routers.invite import router as invite_router
+from app.routers.media import router as media_router
+from app.routers.admin_import import router as admin_router  # si tu veux l'import zip
 
 setup_logging()
 
-app = FastAPI(
-    title="Selection Neuro API",
-    version="0.1.0",
-)
+app = FastAPI(title="Selection Neuro API", version="0.1.0")
+
 
 @app.on_event("startup")
 def on_startup():
     run_migrations()
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,3 +42,5 @@ app.include_router(health_router)
 app.include_router(products_router)
 app.include_router(stacks_router)
 app.include_router(invite_router)
+app.include_router(media_router)
+app.include_router(admin_router)

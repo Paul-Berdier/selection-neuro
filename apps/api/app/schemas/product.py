@@ -7,9 +7,10 @@ class ProductOut(BaseModel):
     slug: str
     name: str
     short_desc: str = ""
-    description: str = ""
+    description_md: str = ""
     category: str = ""
     price_month_eur: float | None = None
+    image_url: str | None = None
 
     model_config = {"from_attributes": True}
 

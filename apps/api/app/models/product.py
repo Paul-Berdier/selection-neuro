@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import String, Text, Integer, Boolean, Numeric
+from sqlalchemy import String, Text, Integer, Boolean, Numeric, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -13,13 +13,20 @@ class Product(Base):
 
     slug: Mapped[str] = mapped_column(String(120), unique=True, index=True)
     name: Mapped[str] = mapped_column(String(200))
+
     short_desc: Mapped[str] = mapped_column(String(300), default="")
-    description: Mapped[str] = mapped_column(Text, default="")
+    description_md: Mapped[str] = mapped_column(Text, default="")
 
     category: Mapped[str] = mapped_column(String(80), default="")
 
-    # pricing (optionnel)
+    # pricing
     price_month_eur: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+
+    # media (image stored in DB)
+    image_media_id: Mapped[int | None] = mapped_column(
+        ForeignKey("media.id", ondelete="SET NULL"), nullable=True
+    )
+    image_media = relationship("Media", lazy="joined")
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 

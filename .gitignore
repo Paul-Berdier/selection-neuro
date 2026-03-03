@@ -42,3 +42,7 @@ pgdata*/
 
 # Alembic
 alembic/__pycache__/
+
+# Zip
+scripts/notion_import/_input/
+scripts/notion_import/_work/
