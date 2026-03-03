@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { apiGet } from "@/lib/api";
 import type { Stack } from "@/lib/types";
 import { Section } from "@/components/Section";
@@ -45,12 +46,12 @@ export default async function StackDetailPage({
                       {s.products.map((sp) => (
                         <tr key={sp.product_slug}>
                           <td className="px-4 py-3">
-                            <a
+                            <Link
                               className="no-underline hover:underline font-medium"
                               href={`/produits/${sp.product_slug}`}
                             >
                               {sp.product_name}
-                            </a>
+                            </Link>
                             <div className="mt-1">
                               {sp.product_category ? <Badge>{sp.product_category}</Badge> : null}
                             </div>
@@ -84,15 +85,15 @@ export default async function StackDetailPage({
             <Card>
               <div className="text-sm font-medium">Navigation</div>
               <div className="mt-3 flex flex-col gap-2 text-sm">
-                <a className="no-underline hover:underline" href="/#stacks">
+                <Link className="no-underline hover:underline" href="/#stacks">
                   ← Retour landing
-                </a>
-                <a className="no-underline hover:underline" href="/produits">
+                </Link>
+                <Link className="no-underline hover:underline" href="/produits">
                   Voir tous les produits
-                </a>
-                <a className="no-underline hover:underline" href="/#invite">
+                </Link>
+                <Link className="no-underline hover:underline" href="/#invite">
                   Demander une invitation
-                </a>
+                </Link>
               </div>
             </Card>
           </div>
