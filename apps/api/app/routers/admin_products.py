@@ -4,7 +4,7 @@ import re
 import unicodedata
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, Query
 from sqlalchemy.orm import Session
 
 from app.core.auth import require_admin_token
@@ -41,6 +41,19 @@ def guess_content_type(filename: str) -> str:
     return ct or "application/octet-stream"
 
 
+def parse_float_or_none(s: str | None) -> float | None:
+    if not s:
+        return None
+    try:
+        return float(s.replace(",", ".").strip())
+    except ValueError:
+        raise HTTPException(status_code=400, detail="price_month_eur must be a number")
+
+
+def split_tags(s: str) -> list[str]:
+    return [t.strip() for t in (s or "").split(",") if t.strip()]
+
+
 def upsert_media(db: Session, content: bytes, filename: str) -> Media:
     h = sha256_bytes(content)
     obj = db.query(Media).filter(Media.sha256 == h).first()
@@ -63,7 +76,6 @@ def upsert_benefit(db: Session, name: str) -> Benefit:
     bslug = slugify(name)
     obj = db.query(Benefit).filter(Benefit.slug == bslug).first()
     if obj:
-        # on met à jour le name (utile si tu changes l'emoji / libellé)
         obj.name = name
         return obj
 
@@ -92,32 +104,60 @@ def upsert_product(db: Session, slug: str, **fields) -> Product:
     return obj
 
 
-def upsert_product_benefit(db: Session, product_id: int, benefit_id: int) -> None:
-    obj = (
-        db.query(ProductBenefit)
-        .filter(ProductBenefit.product_id == product_id, ProductBenefit.benefit_id == benefit_id)
-        .first()
-    )
-    if obj:
-        return
-    db.add(
-        ProductBenefit(
-            product_id=product_id,
-            benefit_id=benefit_id,
-            note="",
-            evidence_level=None,
+def ensure_product(db: Session, slug: str) -> Product:
+    obj = db.query(Product).filter(Product.slug == slug).first()
+    if not obj:
+        raise HTTPException(status_code=404, detail=f"Product not found: {slug}")
+    return obj
+
+
+def add_product_benefits(db: Session, product_id: int, tags: list[str], mode: str) -> None:
+    """
+    mode:
+      - append: ajoute ce qui manque
+      - replace: remplace tout (supprime puis ajoute)
+    """
+    if mode not in ("append", "replace"):
+        raise HTTPException(status_code=400, detail="benefits_mode must be 'append' or 'replace'")
+
+    if mode == "replace":
+        db.query(ProductBenefit).filter(ProductBenefit.product_id == product_id).delete(synchronize_session=False)
+
+    for tag in tags:
+        b = upsert_benefit(db, tag)
+        link = (
+            db.query(ProductBenefit)
+            .filter(ProductBenefit.product_id == product_id, ProductBenefit.benefit_id == b.id)
+            .first()
         )
-    )
+        if link:
+            continue
+        db.add(ProductBenefit(product_id=product_id, benefit_id=b.id, note="", evidence_level=None))
+
+
+def product_to_dict(p: Product) -> dict:
+    return {
+        "id": p.id,
+        "slug": p.slug,
+        "name": p.name,
+        "short_desc": p.short_desc,
+        "category": p.category,
+        "description_md": p.description_md,
+        "price_month_eur": float(p.price_month_eur) if p.price_month_eur is not None else None,
+        "image_media_id": p.image_media_id,
+        "is_active": p.is_active,
+    }
 
 
 # -----------------------
-# Route: Create/Update Product
+# Routes
 # -----------------------
+
 @router.post("/products")
 async def admin_create_or_update_product(
     _: None = Depends(require_admin_token),
     db: Session = Depends(get_db),
-    # Champs Product
+
     name: str = Form(...),
     slug: str | None = Form(None),
     short_desc: str = Form(""),
@@ -125,15 +165,14 @@ async def admin_create_or_update_product(
     category: str = Form(""),
     price_month_eur: str | None = Form(None),
     is_active: bool = Form(True),
-    # Benefits via tags (CSV / Notion style) : "⚡..., 🧬..., ..."
+
     benefits: str = Form(""),
-    # Image upload
+    benefits_mode: str = Form("append"),  # append | replace
+
     image: UploadFile | None = File(None),
 ):
-    # slug auto
     pslug = slugify(slug or name)
 
-    # image => Media
     image_media_id: Optional[int] = None
     if image is not None:
         content = await image.read()
@@ -141,15 +180,8 @@ async def admin_create_or_update_product(
             m = upsert_media(db, content, image.filename or "image")
             image_media_id = m.id
 
-    # price parse
-    price_val: Optional[float] = None
-    if price_month_eur:
-        try:
-            price_val = float(price_month_eur.replace(",", ".").strip())
-        except ValueError:
-            raise HTTPException(status_code=400, detail="price_month_eur must be a number")
+    price_val = parse_float_or_none(price_month_eur)
 
-    # upsert product
     p = upsert_product(
         db,
         pslug,
@@ -157,32 +189,125 @@ async def admin_create_or_update_product(
         short_desc=short_desc,
         description_md=description_md,
         category=category,
-        image_path="",  # ton modèle Product a ce champ
+        image_path="",
         price_month_eur=price_val,
         image_media_id=image_media_id,
         is_active=is_active,
     )
 
-    # benefits: split by comma
-    tags = [t.strip() for t in (benefits or "").split(",") if t.strip()]
-    for tag in tags:
-        b = upsert_benefit(db, tag)
-        upsert_product_benefit(db, p.id, b.id)
+    tags = split_tags(benefits)
+    if tags:
+        add_product_benefits(db, p.id, tags, benefits_mode)
 
     db.commit()
     db.refresh(p)
 
+    return {"ok": True, "product": product_to_dict(p), "benefits_added": tags, "benefits_mode": benefits_mode}
+
+
+@router.get("/products")
+def admin_list_products(
+    _: None = Depends(require_admin_token),
+    db: Session = Depends(get_db),
+
+    q: str | None = Query(default=None, description="Search on slug/name"),
+    is_active: bool | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+):
+    qry = db.query(Product)
+
+    if q:
+        ql = f"%{q.strip().lower()}%"
+        qry = qry.filter((Product.slug.ilike(ql)) | (Product.name.ilike(ql)))
+
+    if is_active is not None:
+        qry = qry.filter(Product.is_active == is_active)
+
+    total = qry.count()
+    items = (
+        qry.order_by(Product.name.asc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
     return {
         "ok": True,
-        "product": {
-            "id": p.id,
-            "slug": p.slug,
-            "name": p.name,
-            "short_desc": p.short_desc,
-            "category": p.category,
-            "price_month_eur": float(p.price_month_eur) if p.price_month_eur is not None else None,
-            "image_media_id": p.image_media_id,
-            "is_active": p.is_active,
-        },
-        "benefits_added": tags,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "items": [product_to_dict(p) for p in items],
     }
+
+
+@router.get("/products/{slug}")
+def admin_get_product(
+    slug: str,
+    _: None = Depends(require_admin_token),
+    db: Session = Depends(get_db),
+):
+    p = ensure_product(db, slug)
+    return {"ok": True, "product": product_to_dict(p)}
+
+
+@router.put("/products/{slug}")
+async def admin_update_product(
+    slug: str,
+    _: None = Depends(require_admin_token),
+    db: Session = Depends(get_db),
+
+    # tout est optionnel ici
+    name: str | None = Form(None),
+    short_desc: str | None = Form(None),
+    description_md: str | None = Form(None),
+    category: str | None = Form(None),
+    price_month_eur: str | None = Form(None),
+    is_active: bool | None = Form(None),
+
+    benefits: str = Form(""),
+    benefits_mode: str = Form("append"),
+
+    image: UploadFile | None = File(None),
+):
+    p = ensure_product(db, slug)
+
+    if name is not None:
+        p.name = name
+    if short_desc is not None:
+        p.short_desc = short_desc
+    if description_md is not None:
+        p.description_md = description_md
+    if category is not None:
+        p.category = category
+    if price_month_eur is not None:
+        p.price_month_eur = parse_float_or_none(price_month_eur)
+    if is_active is not None:
+        p.is_active = is_active
+
+    if image is not None:
+        content = await image.read()
+        if content:
+            m = upsert_media(db, content, image.filename or "image")
+            p.image_media_id = m.id
+
+    tags = split_tags(benefits)
+    if tags:
+        add_product_benefits(db, p.id, tags, benefits_mode)
+
+    db.commit()
+    db.refresh(p)
+
+    return {"ok": True, "product": product_to_dict(p), "benefits_added": tags, "benefits_mode": benefits_mode}
+
+
+@router.delete("/products/{slug}")
+def admin_soft_delete_product(
+    slug: str,
+    _: None = Depends(require_admin_token),
+    db: Session = Depends(get_db),
+):
+    p = ensure_product(db, slug)
+    p.is_active = False
+    db.commit()
+    return {"ok": True, "slug": slug, "is_active": False}
