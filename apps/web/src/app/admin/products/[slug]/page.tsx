@@ -1,24 +1,24 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
+import { Product } from "@/lib/types";
 
-type Product = {
-  id: number;
-  slug: string;
-  name: string;
-  short_desc: string;
-  category: string;
-  description_md: string;
-  price_month_eur: number | null;
-  image_media_id: number | null;
-  is_active: boolean;
-};
+function normalizeForm(form: FormData) {
+  const ia = form.get("is_active");
+  if (ia !== null) form.set("is_active", String(ia).toLowerCase() === "true" ? "true" : "false");
 
-type ApiResp =
-  | { ok: true; product: Product }
-  | { ok: false; error?: string; detail?: string };
+  const pm = form.get("price_month_eur");
+  if (pm !== null) {
+    const raw = String(pm).trim();
+    if (!raw) form.delete("price_month_eur");
+    else form.set("price_month_eur", raw.replace("€", "").trim().replace(",", "."));
+  }
+
+  const bm = form.get("benefits_mode");
+  if (bm !== null) form.set("benefits_mode", String(bm) === "replace" ? "replace" : "append");
+}
 
 export default function EditProductPage() {
   const params = useParams<{ slug: string }>();
@@ -26,28 +26,26 @@ export default function EditProductPage() {
   const router = useRouter();
 
   const [p, setP] = useState<Product | null>(null);
-  const [error, setError] = useState("");
-  const [okMsg, setOkMsg] = useState("");
+  const [err, setErr] = useState("");
+  const [ok, setOk] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function load() {
     setLoading(true);
-    setError("");
-    setOkMsg("");
+    setErr("");
+    setOk("");
 
     try {
-      const resp = await fetch(`/api/admin/products/${encodeURIComponent(slug)}`, {
-        cache: "no-store",
-      });
-      const data: ApiResp = await resp.json();
-
-      if (!resp.ok || !data.ok) {
-        setError((data as any)?.detail || (data as any)?.error || "Erreur chargement");
+      const res = await fetch(`/api/admin/products/${encodeURIComponent(slug)}`, { cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        setErr(data?.detail || data?.error || "Erreur chargement");
+        setLoading(false);
         return;
       }
       setP(data.product);
     } catch (e: any) {
-      setError(e?.message || "fetch failed");
+      setErr(e?.message || "fetch failed");
     } finally {
       setLoading(false);
     }
@@ -61,156 +59,154 @@ export default function EditProductPage() {
 
   async function onSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError("");
-    setOkMsg("");
+    setErr("");
+    setOk("");
 
     const form = new FormData(e.currentTarget);
+    normalizeForm(form);
 
-    try {
-      const resp = await fetch(`/api/admin/products/${encodeURIComponent(slug)}`, {
-        method: "PUT",
-        body: form,
-      });
-      const data: any = await resp.json();
+    const res = await fetch(`/api/admin/products/${encodeURIComponent(slug)}`, { method: "PUT", body: form });
+    const data = await res.json().catch(() => ({}));
 
-      if (!resp.ok || !data.ok) {
-        setError(data?.detail || data?.error || "Erreur save");
-        return;
-      }
-
-      setOkMsg("Sauvegardé ✅");
-      setP(data.product);
-    } catch (e: any) {
-      setError(e?.message || "fetch failed");
+    if (!res.ok || !data.ok) {
+      setErr(data?.detail || data?.error || "Erreur save");
+      return;
     }
+
+    setP(data.product);
+    setOk("Sauvegardé ✅");
   }
 
   async function onDisable() {
-    if (!confirm("Désactiver ce produit (soft delete) ?")) return;
-    setError("");
-    setOkMsg("");
+    if (!confirm("Désactiver ce produit ?")) return;
+    setErr("");
+    setOk("");
 
-    try {
-      const resp = await fetch(`/api/admin/products/${encodeURIComponent(slug)}`, {
-        method: "DELETE",
-      });
-      const data: any = await resp.json();
+    const res = await fetch(`/api/admin/products/${encodeURIComponent(slug)}`, { method: "DELETE" });
+    const data = await res.json().catch(() => ({}));
 
-      if (!resp.ok || !data.ok) {
-        setError(data?.detail || data?.error || "Erreur delete");
-        return;
-      }
-
-      router.push("/admin/products");
-    } catch (e: any) {
-      setError(e?.message || "fetch failed");
+    if (!res.ok || !data.ok) {
+      setErr(data?.detail || data?.error || "Erreur delete");
+      return;
     }
+
+    router.push("/admin/products");
   }
 
   return (
-    <main style={{ maxWidth: 900, margin: "0 auto", padding: 24 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16 }}>
+    <main className="mx-auto max-w-3xl px-6 py-6">
+      <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 style={{ margin: 0 }}>Admin — Éditer produit</h1>
-          <div style={{ opacity: 0.75, marginTop: 6 }}>
-            <Link href="/admin/products">← Retour liste</Link>
+          <h1 className="text-2xl font-bold">Admin — Éditer produit</h1>
+          <div className="mt-1 text-sm text-zinc-600">
+            <Link className="underline" href="/admin/products">
+              ← Retour liste
+            </Link>
           </div>
         </div>
 
-        <button onClick={onDisable} style={{ padding: "8px 12px", fontWeight: 800 }}>
+        <button onClick={onDisable} className="rounded-md border border-zinc-300 bg-white px-4 py-2 font-semibold">
           Désactiver
         </button>
       </div>
 
-      {error && (
-        <div style={{ marginTop: 16, padding: 12, background: "#ffecec", border: "1px solid #ffb3b3" }}>
-          <b>Erreur:</b> {error}
+      {err ? (
+        <div className="mt-4 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900">
+          <b>Erreur:</b> {err}
         </div>
-      )}
+      ) : null}
 
-      {okMsg && (
-        <div style={{ marginTop: 16, padding: 12, background: "#ecffef", border: "1px solid #b3ffc2" }}>
-          {okMsg}
+      {ok ? (
+        <div className="mt-4 rounded-md border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-900">
+          {ok}
         </div>
-      )}
+      ) : null}
 
-      {loading && <div style={{ marginTop: 16 }}>Chargement…</div>}
+      {loading ? <div className="mt-4 text-sm text-zinc-600">Chargement…</div> : null}
 
       {!p && !loading ? (
-        <div style={{ marginTop: 16 }}>Produit introuvable ou non chargé.</div>
+        <div className="mt-6 text-zinc-600">Produit introuvable.</div>
       ) : p ? (
-        <form onSubmit={onSave} encType="multipart/form-data" style={{ display: "grid", gap: 12, marginTop: 16 }}>
-          <label>
-            Nom
-            <input name="name" defaultValue={p.name} style={{ width: "100%", padding: 10 }} />
+        <form onSubmit={onSave} encType="multipart/form-data" className="mt-6 grid gap-4">
+          <label className="grid gap-1">
+            <span className="text-sm font-medium">Nom</span>
+            <input name="name" defaultValue={p.name} className="rounded-md border border-zinc-300 bg-white px-3 py-2" />
           </label>
 
-          <label>
-            Short desc
-            <input name="short_desc" defaultValue={p.short_desc} style={{ width: "100%", padding: 10 }} />
-          </label>
-
-          <label>
-            Catégorie
-            <input name="category" defaultValue={p.category} style={{ width: "100%", padding: 10 }} />
-          </label>
-
-          <label>
-            Prix mensuel (€)
+          <label className="grid gap-1">
+            <span className="text-sm font-medium">Short desc</span>
             <input
-              name="price_month_eur"
-              defaultValue={p.price_month_eur ?? ""}
-              placeholder="ex: 19.90"
-              style={{ width: "100%", padding: 10 }}
+              name="short_desc"
+              defaultValue={p.short_desc}
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2"
             />
           </label>
 
-          <label>
-            Actif ?
-            <select name="is_active" defaultValue={String(p.is_active)} style={{ width: "100%", padding: 10 }}>
+          <label className="grid gap-1">
+            <span className="text-sm font-medium">Catégorie</span>
+            <input name="category" defaultValue={p.category} className="rounded-md border border-zinc-300 bg-white px-3 py-2" />
+          </label>
+
+          <label className="grid gap-1">
+            <span className="text-sm font-medium">Prix mensuel (€)</span>
+            <input
+              name="price_month_eur"
+              defaultValue={p.price_month_eur ?? ""}
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2"
+            />
+          </label>
+
+          <label className="grid gap-1">
+            <span className="text-sm font-medium">Actif ?</span>
+            <select
+              name="is_active"
+              defaultValue={String(p.is_active)}
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2"
+            >
               <option value="true">Oui</option>
               <option value="false">Non</option>
             </select>
           </label>
 
-          <label>
-            Benefits (séparés par virgule)
+          <label className="grid gap-1">
+            <span className="text-sm font-medium">Benefits (virgules)</span>
             <input
               name="benefits"
               placeholder="🛡Neuroprotection, 🌿Anti-stress"
-              style={{ width: "100%", padding: 10 }}
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2"
             />
           </label>
 
-          <label>
-            Mode benefits
-            <select name="benefits_mode" defaultValue="append" style={{ width: "100%", padding: 10 }}>
+          <label className="grid gap-1">
+            <span className="text-sm font-medium">Mode benefits</span>
+            <select name="benefits_mode" defaultValue="append" className="rounded-md border border-zinc-300 bg-white px-3 py-2">
               <option value="append">Ajouter</option>
               <option value="replace">Remplacer</option>
             </select>
           </label>
 
-          <label>
-            Description (Markdown)
+          <label className="grid gap-1">
+            <span className="text-sm font-medium">Description (Markdown)</span>
             <textarea
               name="description_md"
-              rows={14}
+              rows={12}
               defaultValue={p.description_md}
-              style={{ width: "100%", padding: 10 }}
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2"
             />
           </label>
 
-          <label>
-            Remplacer l’image
-            <input type="file" name="image" accept="image/*" />
+          <label className="grid gap-1">
+            <span className="text-sm font-medium">Remplacer l’image</span>
+            <input name="image" type="file" accept="image/*" className="block" />
+            <span className="text-xs text-zinc-500">image_media_id actuel : <b>{p.image_media_id ?? "—"}</b></span>
           </label>
 
-          <button type="submit" style={{ padding: "10px 14px", fontWeight: 800 }}>
+          <button className="rounded-md bg-zinc-900 px-4 py-2 text-white font-semibold hover:bg-zinc-800">
             Sauvegarder
           </button>
 
-          <div style={{ opacity: 0.75 }}>
-            Slug : <code>{p.slug}</code>
+          <div className="text-sm text-zinc-600">
+            Slug : <code className="font-mono">{p.slug}</code>
           </div>
         </form>
       ) : null}
