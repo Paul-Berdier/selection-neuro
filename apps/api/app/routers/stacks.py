@@ -11,9 +11,19 @@ from app.services.stack_service import list_stacks, get_stack_by_slug
 router = APIRouter(prefix="/stacks", tags=["stacks"])
 
 
+def _get_stack_description(s) -> str:
+    """
+    Compat DB/models:
+    - new schema: Stack.description_md
+    - legacy schema: Stack.description
+    """
+    return (getattr(s, "description_md", None) or getattr(s, "description", None) or "")
+
+
 def _stack_to_out(s) -> StackOut:
-    products = []
-    for sp in (s.stack_products or []):
+    products: list[StackProductOut] = []
+
+    for sp in (getattr(s, "stack_products", None) or []):
         p = sp.product
         products.append(
             StackProductOut(
@@ -28,13 +38,11 @@ def _stack_to_out(s) -> StackOut:
         )
 
     return StackOut(
-        "id": s.id,
-        "slug": s.slug,
-        "title": s.title,
-        "subtitle": s.subtitle or "",
-        # ✅ compat: nouveaux schémas = description_md, anciens = description
-        "description": (getattr(s, "description_md", None) or getattr(s, "description", None) or ""),
-        "is_active": bool(s.is_active),
+        slug=s.slug,
+        title=s.title,
+        subtitle=s.subtitle or "",
+        description=_get_stack_description(s),
+        products=products,
     )
 
 
