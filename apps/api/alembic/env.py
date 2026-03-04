@@ -5,7 +5,6 @@ from __future__ import annotations
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
-
 from alembic import context
 
 from app.core.config import settings
@@ -20,6 +19,17 @@ target_metadata = Base.metadata
 
 
 def get_url() -> str:
+    """
+    Priority:
+    1) OS env var DATABASE_URL (pratique en CI / PowerShell / Railway / Docker)
+    2) settings.database_url (qui peut venir d'un .env chargé par l'app)
+    """
+    import os
+
+    env_url = os.getenv("DATABASE_URL")
+    if env_url and env_url.strip():
+        return env_url.strip()
+
     return settings.database_url
 
 
