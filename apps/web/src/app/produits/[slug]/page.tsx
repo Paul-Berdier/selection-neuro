@@ -32,7 +32,7 @@ export default async function ProductDetailPage({
 
               <div className="mt-5 max-w-none">
                 <p className="text-neutral-700 whitespace-pre-wrap">
-                  {p.description_md || p.description || "Description à venir."}
+                  {p.description_md || "Description à venir."}
                 </p>
               </div>
             </Card>
