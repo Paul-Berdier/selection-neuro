@@ -1,167 +1,79 @@
-"use client";
+import { NextResponse } from "next/server";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+function getUpstreamBase(): string {
+  const base = process.env.NEXT_PUBLIC_API_URL;
+  if (!base) throw new Error("NEXT_PUBLIC_API_URL is missing");
+  return base.replace(/\/+$/, "");
+}
 
-type Product = {
-  id: number;
-  slug: string;
-  name: string;
-  short_desc: string;
-  category: string;
-  description_md: string;
-  price_month_eur: number | null;
-  image_media_id: number | null;
-  is_active: boolean;
-};
+function getAdminToken(): string {
+  const t = process.env.ADMIN_TOKEN;
+  if (!t) throw new Error("ADMIN_TOKEN is missing");
+  return t;
+}
 
-export default function EditProductPage() {
-  const params = useParams<{ slug: string }>();
-  const slug = params.slug;
-  const router = useRouter();
+type Ctx = { params: Promise<{ slug: string }> };
 
-  const [p, setP] = useState<Product | null>(null);
-  const [error, setError] = useState("");
-  const [okMsg, setOkMsg] = useState("");
+export async function GET(_req: Request, ctx: Ctx) {
+  try {
+    const base = getUpstreamBase();
+    const token = getAdminToken();
+    const { slug } = await ctx.params;
 
-  useEffect(() => {
-    (async () => {
-      setError("");
-      const resp = await fetch(`/api/admin/products/${encodeURIComponent(slug)}`, { cache: "no-store" });
-      const data = await resp.json();
-      if (!resp.ok || !data.ok) {
-        setError(data?.detail || data?.error || "Erreur chargement");
-        return;
-      }
-      setP(data.product);
-    })();
-  }, [slug]);
+    const upstream = await fetch(`${base}/admin/products/${encodeURIComponent(slug)}`, {
+      method: "GET",
+      headers: { "X-Admin-Token": token },
+      cache: "no-store",
+    });
 
-  async function onSave(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError("");
-    setOkMsg("");
+    const text = await upstream.text();
+    let data: any;
+    try { data = JSON.parse(text); } catch { data = { raw: text }; }
+    return NextResponse.json(data, { status: upstream.status });
+  } catch (e: any) {
+    return NextResponse.json({ ok: false, error: e?.message || String(e) }, { status: 500 });
+  }
+}
 
-    const form = new FormData(e.currentTarget);
+export async function PUT(req: Request, ctx: Ctx) {
+  try {
+    const base = getUpstreamBase();
+    const token = getAdminToken();
+    const { slug } = await ctx.params;
 
-    const resp = await fetch(`/api/admin/products/${encodeURIComponent(slug)}`, {
+    const form = await req.formData();
+
+    const upstream = await fetch(`${base}/admin/products/${encodeURIComponent(slug)}`, {
       method: "PUT",
+      headers: { "X-Admin-Token": token },
       body: form,
     });
 
-    const data = await resp.json();
-    if (!resp.ok || !data.ok) {
-      setError(data?.detail || data?.error || "Erreur save");
-      return;
-    }
-    setOkMsg("Sauvegardé ✅");
-    setP(data.product);
+    const text = await upstream.text();
+    let data: any;
+    try { data = JSON.parse(text); } catch { data = { raw: text }; }
+    return NextResponse.json(data, { status: upstream.status });
+  } catch (e: any) {
+    return NextResponse.json({ ok: false, error: e?.message || String(e) }, { status: 500 });
   }
+}
 
-  async function onDelete() {
-    if (!confirm("Désactiver ce produit (soft delete) ?")) return;
-    setError("");
-    setOkMsg("");
+export async function DELETE(_req: Request, ctx: Ctx) {
+  try {
+    const base = getUpstreamBase();
+    const token = getAdminToken();
+    const { slug } = await ctx.params;
 
-    const resp = await fetch(`/api/admin/products/${encodeURIComponent(slug)}`, { method: "DELETE" });
-    const data = await resp.json();
-    if (!resp.ok || !data.ok) {
-      setError(data?.detail || data?.error || "Erreur delete");
-      return;
-    }
-    router.push("/admin/products");
+    const upstream = await fetch(`${base}/admin/products/${encodeURIComponent(slug)}`, {
+      method: "DELETE",
+      headers: { "X-Admin-Token": token },
+    });
+
+    const text = await upstream.text();
+    let data: any;
+    try { data = JSON.parse(text); } catch { data = { raw: text }; }
+    return NextResponse.json(data, { status: upstream.status });
+  } catch (e: any) {
+    return NextResponse.json({ ok: false, error: e?.message || String(e) }, { status: 500 });
   }
-
-  if (!p) {
-    return (
-      <main style={{ maxWidth: 900, margin: "0 auto", padding: 24 }}>
-        <h1>Admin — Éditer</h1>
-        {error ? <div style={{ color: "crimson" }}>{error}</div> : <div>Chargement…</div>}
-      </main>
-    );
-  }
-
-  return (
-    <main style={{ maxWidth: 900, margin: "0 auto", padding: 24 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <h1>Admin — Éditer: {p.name}</h1>
-        <button onClick={onDelete} style={{ padding: "8px 12px", fontWeight: 800 }}>
-          Désactiver
-        </button>
-      </div>
-
-      {error && (
-        <div style={{ marginTop: 16, padding: 12, background: "#ffecec", border: "1px solid #ffb3b3" }}>
-          <b>Erreur:</b> {error}
-        </div>
-      )}
-      {okMsg && (
-        <div style={{ marginTop: 16, padding: 12, background: "#ecffef", border: "1px solid #b3ffc2" }}>
-          {okMsg}
-        </div>
-      )}
-
-      <form onSubmit={onSave} encType="multipart/form-data" style={{ display: "grid", gap: 12, marginTop: 16 }}>
-        <label>
-          Nom
-          <input name="name" defaultValue={p.name} style={{ width: "100%", padding: 10 }} />
-        </label>
-
-        <label>
-          Short desc
-          <input name="short_desc" defaultValue={p.short_desc} style={{ width: "100%", padding: 10 }} />
-        </label>
-
-        <label>
-          Catégorie
-          <input name="category" defaultValue={p.category} style={{ width: "100%", padding: 10 }} />
-        </label>
-
-        <label>
-          Prix mensuel (€)
-          <input
-            name="price_month_eur"
-            defaultValue={p.price_month_eur ?? ""}
-            placeholder="ex: 19.90"
-            style={{ width: "100%", padding: 10 }}
-          />
-        </label>
-
-        <label>
-          Actif ?
-          <select name="is_active" defaultValue={String(p.is_active)} style={{ width: "100%", padding: 10 }}>
-            <option value="true">Oui</option>
-            <option value="false">Non</option>
-          </select>
-        </label>
-
-        <label>
-          Benefits (séparés par virgule)
-          <input name="benefits" placeholder="🛡Neuroprotection, 🌿Anti-stress" style={{ width: "100%", padding: 10 }} />
-        </label>
-
-        <label>
-          Mode benefits
-          <select name="benefits_mode" defaultValue="append" style={{ width: "100%", padding: 10 }}>
-            <option value="append">Ajouter</option>
-            <option value="replace">Remplacer</option>
-          </select>
-        </label>
-
-        <label>
-          Description (Markdown)
-          <textarea name="description_md" rows={14} defaultValue={p.description_md} style={{ width: "100%", padding: 10 }} />
-        </label>
-
-        <label>
-          Remplacer l’image
-          <input type="file" name="image" accept="image/*" />
-        </label>
-
-        <button type="submit" style={{ padding: "10px 14px", fontWeight: 800 }}>
-          Sauvegarder
-        </button>
-      </form>
-    </main>
-  );
 }
