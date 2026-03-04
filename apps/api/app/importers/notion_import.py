@@ -5,19 +5,48 @@ import hashlib
 import mimetypes
 import re
 import tempfile
+import unicodedata
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from app.models import Product, Stack, StackProduct, Benefit, ProductBenefit, Study, ProductStudy
+from app.models import (
+    Product,
+    Stack,
+    StackProduct,
+    Benefit,
+    ProductBenefit,
+    Study,
+    ProductStudy,
+)
 from app.models.media import Media
 
 
+# ============================================================
+# Helpers
+# ============================================================
+
 def slugify(s: str) -> str:
-    s = s.strip().lower()
-    s = re.sub(r"[’'`]", "", s)
+    """
+    Robust slugify:
+    - keeps latin letters with accents by normalizing to ascii (Créatine -> creatine)
+    - drops emojis/symbols
+    - produces stable slugs (no 'cr-atine')
+    """
+    s = (s or "").strip().lower()
+    s = s.replace("’", "'")
+
+    # Normalize accents -> ascii
+    s = unicodedata.normalize("NFKD", s)
+    s = s.encode("ascii", "ignore").decode("ascii")
+
+    # Remove quotes/apostrophes
+    s = re.sub(r"[`'’]+", "", s)
+
+    # Replace non-alnum with '-'
     s = re.sub(r"[^a-z0-9]+", "-", s)
     s = re.sub(r"-{2,}", "-", s).strip("-")
     return s or "item"
@@ -36,7 +65,48 @@ def read_text(p: Path) -> str:
     return p.read_text(encoding="utf-8", errors="ignore")
 
 
-def upsert_product(db: Session, slug: str, **fields) -> Product:
+def split_tags(tags: str) -> list[str]:
+    """
+    Your Notion CSV uses column 'Étiquettes' like:
+      "⚡Attention & réactivité mentale, 🔋 énergie mentale & resistance au stress"
+    We split on commas and trim.
+    """
+    if not tags:
+        return []
+    parts = [t.strip() for t in tags.split(",")]
+    return [p for p in parts if p]
+
+
+def pick_best_image(dir_path: Path) -> Path | None:
+    """
+    Notion export often creates 'image.png' alongside the md.
+    Sometimes there are multiple images in the directory.
+    Strategy:
+      1) prefer image.png / image.jpg / image.jpeg
+      2) else first png/jpg/jpeg/webp
+    """
+    preferred = ["image.png", "image.jpg", "image.jpeg", "image.webp"]
+    for name in preferred:
+        p = dir_path / name
+        if p.exists() and p.is_file():
+            return p
+
+    for ext in ("*.png", "*.jpg", "*.jpeg", "*.webp"):
+        imgs = sorted(dir_path.glob(ext))
+        if imgs:
+            return imgs[0]
+    return None
+
+
+# ============================================================
+# Upserts
+# ============================================================
+
+def upsert_product(
+    db: Session,
+    slug: str,
+    **fields,
+) -> Product:
     obj = db.query(Product).filter(Product.slug == slug).first()
     if obj:
         for k, v in fields.items():
@@ -44,6 +114,36 @@ def upsert_product(db: Session, slug: str, **fields) -> Product:
         return obj
     obj = Product(slug=slug, **fields)
     db.add(obj)
+    return obj
+
+
+def upsert_product_cached(
+    db: Session,
+    cache: dict[str, Product],
+    slug: str,
+    **fields,
+) -> Product:
+    """
+    Use this version when you might touch the same product many times
+    within the same transaction (avoids duplicate inserts & extra queries).
+    """
+    if slug in cache:
+        obj = cache[slug]
+        for k, v in fields.items():
+            setattr(obj, k, v)
+        return obj
+
+    obj = db.query(Product).filter(Product.slug == slug).first()
+    if obj:
+        for k, v in fields.items():
+            setattr(obj, k, v)
+        cache[slug] = obj
+        return obj
+
+    obj = Product(slug=slug, **fields)
+    db.add(obj)
+    db.flush()  # make it "real" immediately (id available)
+    cache[slug] = obj
     return obj
 
 
@@ -167,6 +267,10 @@ def upsert_product_study(db: Session, product_id: int, study_id: int, note: str 
     db.add(ProductStudy(product_id=product_id, study_id=study_id, note=note))
 
 
+# ============================================================
+# Stack dosage parser
+# ============================================================
+
 DOSAGE_LINE = re.compile(
     r"^\s*[-•]?\s*(?P<name>[^:]+)\s*:\s*(?P<value>[0-9]+(?:[.,][0-9]+)?)\s*(?P<unit>mg|g|µg|mcg)\s*$",
     re.IGNORECASE,
@@ -187,6 +291,10 @@ def extract_dosages_from_stack_md(md: str) -> list[tuple[str, float, str]]:
     return out
 
 
+# ============================================================
+# Zip extraction
+# ============================================================
+
 @dataclass
 class ExportPaths:
     work_dir: Path
@@ -198,6 +306,7 @@ def extract_zip_to_temp(zip_path: Path) -> ExportPaths:
     tmp_dir = Path(tempfile.mkdtemp(prefix="notion_export_"))
     with zipfile.ZipFile(zip_path, "r") as z:
         z.extractall(tmp_dir)
+
     return ExportPaths(
         work_dir=tmp_dir,
         md_files=list(tmp_dir.rglob("*.md")),
@@ -217,38 +326,44 @@ def pick_csv(csv_files: list[Path], contains: str) -> Path | None:
     return None
 
 
-def import_benefits_csv(db: Session, csv_path: Path) -> None:
+# ============================================================
+# CSV import
+# ============================================================
+
+def import_benefits_csv(db: Session, csv_path: Path, product_cache: dict[str, Product]) -> int:
+    """
+    In YOUR Notion export, the CSV is basically:
+      columns: Nom | Date de création | Étiquettes
+    We interpret:
+      - Nom => Product name
+      - Étiquettes => Benefits (tags), possibly multiple separated by commas
+    """
     with csv_path.open("r", encoding="utf-8", errors="ignore", newline="") as f:
         rows = list(csv.DictReader(f))
     if not rows:
-        return
+        return 0
 
-    def find_col(candidates: list[str]) -> str | None:
-        for c in candidates:
-            for k in rows[0].keys():
-                if k and k.lower().strip() == c:
-                    return k
-        for c in candidates:
-            for k in rows[0].keys():
-                if k and c in k.lower():
-                    return k
-        return None
+    # detect columns
+    cols = { (k or "").strip().lower(): k for k in rows[0].keys() if k }
+    col_name = cols.get("nom") or cols.get("name") or cols.get("product") or cols.get("produit")
+    col_tags = cols.get("étiquettes") or cols.get("etiquettes") or cols.get("tags") or cols.get("labels")
 
-    col_benefit = find_col(["benefit", "bienfait", "fonction", "category"])
-    col_product = find_col(["product", "produit", "ingredient", "name"])
-    if not col_benefit or not col_product:
-        return
+    if not col_name or not col_tags:
+        # nothing to do; schema doesn't match
+        return 0
 
+    links = 0
     for r in rows:
-        bname = (r.get(col_benefit) or "").strip()
-        pname = (r.get(col_product) or "").strip()
-        if not bname or not pname:
+        pname = (r.get(col_name) or "").strip()
+        tags = (r.get(col_tags) or "").strip()
+        if not pname or not tags:
             continue
 
-        b = upsert_benefit(db, slugify(bname), name=bname, description="", sort_order=100, is_active=True)
-        p = upsert_product(
+        pslug = slugify(pname)
+        p = upsert_product_cached(
             db,
-            slugify(pname),
+            product_cache,
+            pslug,
             name=pname,
             short_desc="",
             description_md="",
@@ -256,8 +371,19 @@ def import_benefits_csv(db: Session, csv_path: Path) -> None:
             image_path="",
             is_active=True,
         )
-        db.flush()
-        upsert_product_benefit(db, p.id, b.id)
+
+        for tag in split_tags(tags):
+            # keep original tag label as benefit name (including emoji),
+            # but slugify will remove emoji and keep text
+            bslug = slugify(tag)
+            if not bslug:
+                continue
+            b = upsert_benefit(db, bslug, name=tag, description="", sort_order=100, is_active=True)
+            db.flush()
+            upsert_product_benefit(db, p.id, b.id)
+            links += 1
+
+    return links
 
 
 def stable_study_slug(title: str, url: str) -> str:
@@ -266,11 +392,16 @@ def stable_study_slug(title: str, url: str) -> str:
     return slugify(title)[:140] + "-" + h
 
 
-def import_studies_csv(db: Session, csv_path: Path) -> None:
+def import_studies_csv(db: Session, csv_path: Path, product_cache: dict[str, Product]) -> int:
+    """
+    Only imports if the CSV actually contains study fields.
+    Your current export "produits et études" does NOT contain studies (it contains tags),
+    so this function will typically do nothing (by design).
+    """
     with csv_path.open("r", encoding="utf-8", errors="ignore", newline="") as f:
         rows = list(csv.DictReader(f))
     if not rows:
-        return
+        return 0
 
     def find_col_contains(substrs: list[str]) -> str | None:
         for k in rows[0].keys():
@@ -279,12 +410,15 @@ def import_studies_csv(db: Session, csv_path: Path) -> None:
                 return k
         return None
 
-    col_product = find_col_contains(["product", "produit", "ingredient", "name"])
+    col_product = find_col_contains(["product", "produit", "ingredient", "name", "nom"])
     col_title = find_col_contains(["title", "titre", "study", "étude", "etude"])
     col_url = find_col_contains(["url", "link", "lien"])
-    if not col_product or not col_title:
-        return
 
+    # if we can't find a study-title column, we skip
+    if not col_product or not col_title:
+        return 0
+
+    links = 0
     for r in rows:
         pname = (r.get(col_product) or "").strip()
         title = (r.get(col_title) or "").strip()
@@ -292,8 +426,9 @@ def import_studies_csv(db: Session, csv_path: Path) -> None:
         if not pname or not title:
             continue
 
-        p = upsert_product(
+        p = upsert_product_cached(
             db,
+            product_cache,
             slugify(pname),
             name=pname,
             short_desc="",
@@ -318,15 +453,32 @@ def import_studies_csv(db: Session, csv_path: Path) -> None:
 
         db.flush()
         upsert_product_study(db, p.id, s.id)
+        links += 1
+
+    return links
 
 
-def import_markdowns(db: Session, md_files: list[Path]) -> None:
+# ============================================================
+# Markdown import
+# ============================================================
+
+def import_markdowns(db: Session, md_files: list[Path], product_cache: dict[str, Product]) -> dict[str, int]:
+    """
+    - Stacks: any md file whose filename contains 'stack'
+    - Product pages: md files located under folders containing keywords
+      (produit, product, etude, study, ingredient, bienfait)
+    """
+    created_stacks = 0
+    linked_stack_products = 0
+    upserted_products = 0
+    media_count = 0
+
     for p in md_files:
         fname = p.name.lower()
         parent = str(p.parent).lower()
         text = read_text(p)
 
-        # stacks
+        # --- stacks ---
         if "stack" in fname:
             title = ""
             for line in text.splitlines():
@@ -334,14 +486,23 @@ def import_markdowns(db: Session, md_files: list[Path]) -> None:
                     title = line.lstrip("#").strip()
                     break
             title = title or p.stem
-            st = upsert_stack(db, slugify(title), title=title, subtitle="", description_md=text, is_active=True)
+            st = upsert_stack(
+                db,
+                slugify(title),
+                title=title,
+                subtitle="",
+                description_md=text,
+                is_active=True,
+            )
             db.flush()
+            created_stacks += 1
 
             dosages = extract_dosages_from_stack_md(text)
             sort = 10
             for prod_name, val, unit in dosages:
-                pr = upsert_product(
+                pr = upsert_product_cached(
                     db,
+                    product_cache,
                     slugify(prod_name),
                     name=prod_name,
                     short_desc="",
@@ -352,10 +513,11 @@ def import_markdowns(db: Session, md_files: list[Path]) -> None:
                 )
                 db.flush()
                 upsert_stack_product(db, st.id, pr.id, val, unit, sort_order=sort)
+                linked_stack_products += 1
                 sort += 10
             continue
 
-        # product pages
+        # --- product pages ---
         if any(x in parent for x in ["produit", "product", "etude", "study", "ingredient", "bienfait"]):
             title = ""
             for line in text.splitlines():
@@ -366,13 +528,15 @@ def import_markdowns(db: Session, md_files: list[Path]) -> None:
             pslug = slugify(title)
 
             image_media_id = None
-            img = p.parent / "image.png"
-            if img.exists():
+            img = pick_best_image(p.parent)
+            if img and img.exists():
                 m = upsert_media(db, img.read_bytes(), img.name)
                 image_media_id = m.id
+                media_count += 1
 
-            upsert_product(
+            upsert_product_cached(
                 db,
+                product_cache,
                 pslug,
                 name=title,
                 short_desc="",
@@ -383,21 +547,40 @@ def import_markdowns(db: Session, md_files: list[Path]) -> None:
                 image_media_id=image_media_id,
                 is_active=True,
             )
+            upserted_products += 1
             continue
 
+    return {
+        "stacks_upserted": created_stacks,
+        "stack_products_linked": linked_stack_products,
+        "products_upserted_from_md": upserted_products,
+        "media_upserted": media_count,
+    }
+
+
+# ============================================================
+# Entry point
+# ============================================================
 
 def run_import(db: Session, zip_path: Path) -> dict:
     exp = extract_zip_to_temp(zip_path)
 
+    # Cache to avoid duplicate inserts inside the same import
+    product_cache: dict[str, Product] = {}
+
     benefits_csv = pick_csv(exp.csv_files, "bienfaits")
     studies_csv = pick_csv(exp.csv_files, "études") or pick_csv(exp.csv_files, "etudes") or pick_csv(exp.csv_files, "studies")
 
-    if benefits_csv:
-        import_benefits_csv(db, benefits_csv)
-    if studies_csv:
-        import_studies_csv(db, studies_csv)
+    benefit_links = 0
+    study_links = 0
 
-    import_markdowns(db, exp.md_files)
+    if benefits_csv:
+        benefit_links = import_benefits_csv(db, benefits_csv, product_cache)
+
+    if studies_csv:
+        study_links = import_studies_csv(db, studies_csv, product_cache)
+
+    md_stats = import_markdowns(db, exp.md_files, product_cache)
 
     return {
         "work_dir": str(exp.work_dir),
@@ -405,4 +588,7 @@ def run_import(db: Session, zip_path: Path) -> dict:
         "csv_files": len(exp.csv_files),
         "benefits_csv": benefits_csv.name if benefits_csv else None,
         "studies_csv": studies_csv.name if studies_csv else None,
+        "benefit_links_created": benefit_links,
+        "study_links_created": study_links,
+        **md_stats,
     }
