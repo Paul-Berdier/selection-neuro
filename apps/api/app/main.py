@@ -12,7 +12,6 @@ from app.routers.products import router as products_router
 from app.routers.stacks import router as stacks_router
 from app.routers.invite import router as invite_router
 from app.routers.media import router as media_router
-from app.routers.admin_import import router as admin_router  # si tu veux l'import zip
 from app.routers.admin_migrate import router as admin_migrate_router
 from app.routers.admin_products import router as admin_products_router
 
@@ -40,6 +39,5 @@ app.include_router(products_router)
 app.include_router(stacks_router)
 app.include_router(invite_router)
 app.include_router(media_router)
-app.include_router(admin_router)
 app.include_router(admin_migrate_router)
 app.include_router(admin_products_router)
