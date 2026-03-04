@@ -74,3 +74,34 @@ export type ProductDeleteResponse = ApiResp<{
 export function getErrorMessage(x: any): string {
   return x?.detail || x?.error || "Unknown error";
 }
+
+export function formatApiError(x: any): string {
+  if (!x) return "Erreur inconnue";
+
+  // FastAPI / Pydantic: detail peut être string OU array d'objets
+  const d = x.detail ?? x.error ?? x.message ?? x;
+
+  if (typeof d === "string") return d;
+
+  if (Array.isArray(d)) {
+    // format Pydantic: [{loc, msg, type, ...}, ...]
+    return d
+      .map((e: any) => {
+        const loc = Array.isArray(e?.loc) ? e.loc.join(".") : e?.loc;
+        const msg = e?.msg || JSON.stringify(e);
+        return loc ? `${loc}: ${msg}` : msg;
+      })
+      .join("\n");
+  }
+
+  if (typeof d === "object") {
+    // dernier recours: stringify
+    try {
+      return JSON.stringify(d);
+    } catch {
+      return String(d);
+    }
+  }
+
+  return String(d);
+}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Product, getErrorMessage } from "@/lib/types";
+import { Product, getErrorMessage, formatApiError } from "@/lib/types";
 
 type ApiResp = {
   ok: boolean;
@@ -42,7 +42,7 @@ export default function AdminProductsPage() {
       const res = await fetch(`/api/admin/products?${qs}`, { cache: "no-store" });
       const data: ApiResp = await res.json();
       if (!res.ok || !data.ok) {
-        setErr(getErrorMessage(data));
+        setErr(formatApiError(data));
         setLoading(false);
         return;
       }

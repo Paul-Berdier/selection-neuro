@@ -3,12 +3,16 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Product } from "@/lib/types";
+import { Product, formatApiError } from "@/lib/types";
 
 function normalizeForm(form: FormData) {
+  // is_active
   const ia = form.get("is_active");
-  if (ia !== null) form.set("is_active", String(ia).toLowerCase() === "true" ? "true" : "false");
+  if (ia !== null) {
+    form.set("is_active", String(ia).toLowerCase() === "true" ? "true" : "false");
+  }
 
+  // price_month_eur
   const pm = form.get("price_month_eur");
   if (pm !== null) {
     const raw = String(pm).trim();
@@ -16,8 +20,17 @@ function normalizeForm(form: FormData) {
     else form.set("price_month_eur", raw.replace("€", "").trim().replace(",", "."));
   }
 
+  // benefits_mode
   const bm = form.get("benefits_mode");
-  if (bm !== null) form.set("benefits_mode", String(bm) === "replace" ? "replace" : "append");
+  if (bm !== null) {
+    form.set("benefits_mode", String(bm) === "replace" ? "replace" : "append");
+  }
+
+  // ✅ image: ne l'envoyer que si c'est un vrai File non vide
+  const img = form.get("image");
+  if (!(img instanceof File) || img.size === 0) {
+    form.delete("image");
+  }
 }
 
 export default function EditProductPage() {
@@ -39,7 +52,7 @@ export default function EditProductPage() {
       const res = await fetch(`/api/admin/products/${encodeURIComponent(slug)}`, { cache: "no-store" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
-        setErr(data?.detail || data?.error || "Erreur chargement");
+        setErr(formatApiError(data));
         setLoading(false);
         return;
       }
@@ -65,11 +78,15 @@ export default function EditProductPage() {
     const form = new FormData(e.currentTarget);
     normalizeForm(form);
 
-    const res = await fetch(`/api/admin/products/${encodeURIComponent(slug)}`, { method: "PUT", body: form });
+    const res = await fetch(`/api/admin/products/${encodeURIComponent(slug)}`, {
+      method: "PUT",
+      body: form,
+    });
+
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok || !data.ok) {
-      setErr(data?.detail || data?.error || "Erreur save");
+      setErr(formatApiError(data));
       return;
     }
 
@@ -82,15 +99,19 @@ export default function EditProductPage() {
     setErr("");
     setOk("");
 
-    const res = await fetch(`/api/admin/products/${encodeURIComponent(slug)}`, { method: "DELETE" });
-    const data = await res.json().catch(() => ({}));
+    try {
+      const res = await fetch(`/api/admin/products/${encodeURIComponent(slug)}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
 
-    if (!res.ok || !data.ok) {
-      setErr(data?.detail || data?.error || "Erreur delete");
-      return;
+      if (!res.ok || !data.ok) {
+        setErr(formatApiError(data));
+        return;
+      }
+
+      router.push("/admin/products");
+    } catch (e: any) {
+      setErr(e?.message || "fetch failed");
     }
-
-    router.push("/admin/products");
   }
 
   return (
@@ -111,7 +132,7 @@ export default function EditProductPage() {
       </div>
 
       {err ? (
-        <div className="mt-4 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900">
+        <div className="mt-4 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900 whitespace-pre-wrap">
           <b>Erreur:</b> {err}
         </div>
       ) : null}
@@ -144,7 +165,11 @@ export default function EditProductPage() {
 
           <label className="grid gap-1">
             <span className="text-sm font-medium">Catégorie</span>
-            <input name="category" defaultValue={p.category} className="rounded-md border border-zinc-300 bg-white px-3 py-2" />
+            <input
+              name="category"
+              defaultValue={p.category}
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2"
+            />
           </label>
 
           <label className="grid gap-1">
@@ -179,7 +204,11 @@ export default function EditProductPage() {
 
           <label className="grid gap-1">
             <span className="text-sm font-medium">Mode benefits</span>
-            <select name="benefits_mode" defaultValue="append" className="rounded-md border border-zinc-300 bg-white px-3 py-2">
+            <select
+              name="benefits_mode"
+              defaultValue="append"
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2"
+            >
               <option value="append">Ajouter</option>
               <option value="replace">Remplacer</option>
             </select>
@@ -198,7 +227,9 @@ export default function EditProductPage() {
           <label className="grid gap-1">
             <span className="text-sm font-medium">Remplacer l’image</span>
             <input name="image" type="file" accept="image/*" className="block" />
-            <span className="text-xs text-zinc-500">image_media_id actuel : <b>{p.image_media_id ?? "—"}</b></span>
+            <span className="text-xs text-zinc-500">
+              image_media_id actuel : <b>{p.image_media_id ?? "—"}</b>
+            </span>
           </label>
 
           <button className="rounded-md bg-zinc-900 px-4 py-2 text-white font-semibold hover:bg-zinc-800">

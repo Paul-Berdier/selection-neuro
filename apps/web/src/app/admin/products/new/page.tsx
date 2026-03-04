@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { formatApiError } from "@/lib/types";
 
 function normalizeForm(form: FormData) {
   // is_active
@@ -19,6 +20,12 @@ function normalizeForm(form: FormData) {
   // benefits_mode
   const bm = form.get("benefits_mode");
   if (bm !== null) form.set("benefits_mode", String(bm) === "replace" ? "replace" : "append");
+
+  // ✅ image: ne l'envoyer que si c'est un vrai File non vide
+  const img = form.get("image");
+  if (!(img instanceof File) || img.size === 0) {
+    form.delete("image");
+  }
 }
 
 export default function NewProductPage() {
@@ -38,7 +45,7 @@ export default function NewProductPage() {
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok || !data.ok) {
-      setErr(data?.detail || data?.error || "Erreur création");
+      setErr(formatApiError(data));
       return;
     }
 
@@ -51,7 +58,7 @@ export default function NewProductPage() {
       <h1 className="text-2xl font-bold">Admin — Nouveau produit</h1>
 
       {err ? (
-        <div className="mt-4 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900">
+        <div className="mt-4 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900 whitespace-pre-wrap">
           <b>Erreur:</b> {err}
         </div>
       ) : null}
@@ -98,7 +105,11 @@ export default function NewProductPage() {
 
         <label className="grid gap-1">
           <span className="text-sm font-medium">Benefits (virgules)</span>
-          <input name="benefits" className="rounded-md border border-zinc-300 bg-white px-3 py-2" placeholder="🛡Neuroprotection, 🌿Anti-stress" />
+          <input
+            name="benefits"
+            className="rounded-md border border-zinc-300 bg-white px-3 py-2"
+            placeholder="🛡Neuroprotection, 🌿Anti-stress"
+          />
         </label>
 
         <label className="grid gap-1">
