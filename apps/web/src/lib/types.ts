@@ -22,6 +22,33 @@ export type Product = {
   is_active: boolean;
 };
 
+/**
+ * --- STACKS (public API) ---
+ * Aligné avec ton StackOut côté API:
+ *   slug, title, subtitle, description, products[]
+ */
+export type StackProduct = {
+  product_slug: string;
+  product_name: string;
+  product_short_desc: string;
+  product_category: string;
+  dosage_value: number | null;
+  dosage_unit: string;
+  note: string;
+};
+
+export type Stack = {
+  slug: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  products: StackProduct[];
+};
+
+export type StackListOut = {
+  items: Stack[];
+};
+
 export type ProductListResponse = ApiResp<{
   total: number;
   limit: number;
