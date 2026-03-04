@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
 type Product = {
   id: number;
@@ -18,72 +21,109 @@ type ApiResp = {
   offset?: number;
   items?: Product[];
   error?: string;
+  detail?: string;
 };
 
-export default async function AdminProductsPage({
-  searchParams,
-}: {
-  searchParams: { q?: string; is_active?: string; limit?: string; offset?: string };
-}) {
-  const q = searchParams.q ?? "";
-  const is_active = searchParams.is_active ?? "";
-  const limit = Number(searchParams.limit ?? "50");
-  const offset = Number(searchParams.offset ?? "0");
+export default function AdminProductsPage() {
+  const [q, setQ] = useState("");
+  const [isActive, setIsActive] = useState<string>(""); // "" | "true" | "false"
+  const [limit, setLimit] = useState(50);
+  const [offset, setOffset] = useState(0);
 
-  const qs = new URLSearchParams();
-  if (q) qs.set("q", q);
-  if (is_active) qs.set("is_active", is_active);
-  qs.set("limit", String(limit));
-  qs.set("offset", String(offset));
+  const [data, setData] = useState<ApiResp>({ ok: true, items: [], total: 0, limit: 50, offset: 0 });
+  const [loading, setLoading] = useState(false);
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/admin/products?${qs.toString()}`, {
-    // NEXT_PUBLIC_APP_URL optionnel; sinon fetch relatif:
-    // mais en server component, fetch("/api/...") fonctionne aussi selon config.
-    // Pour être robuste, on tente relatif si env absent.
-    cache: "no-store",
-  }).catch(async () => {
-    return fetch(`/api/admin/products?${qs.toString()}`, { cache: "no-store" });
-  });
+  const qs = useMemo(() => {
+    const p = new URLSearchParams();
+    if (q) p.set("q", q);
+    if (isActive) p.set("is_active", isActive);
+    p.set("limit", String(limit));
+    p.set("offset", String(offset));
+    return p.toString();
+  }, [q, isActive, limit, offset]);
 
-  const data: ApiResp = await res.json();
+  async function load() {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/products?${qs}`, { cache: "no-store" });
+      const json = await res.json();
+      setData(json);
+    } catch (e: any) {
+      setData({ ok: false, error: e?.message || "fetch failed" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qs]);
 
   const items = data.items ?? [];
+  const total = data.total ?? 0;
 
-  const nextOffset = offset + limit;
   const prevOffset = Math.max(0, offset - limit);
+  const nextOffset = offset + limit;
 
   return (
     <main style={{ maxWidth: 1100, margin: "0 auto", padding: 24 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16 }}>
         <h1 style={{ margin: 0 }}>Admin — Produits</h1>
-        <Link href="/admin/products/new" style={{ fontWeight: 700 }}>
+        <Link href="/admin/products/new" style={{ fontWeight: 800 }}>
           + Nouveau produit
         </Link>
       </div>
 
-      <form method="get" style={{ display: "grid", gridTemplateColumns: "1fr 180px 120px 120px", gap: 12, marginTop: 16 }}>
-        <input name="q" placeholder="Rechercher (slug ou nom)..." defaultValue={q} style={{ padding: 10 }} />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 180px 120px 120px", gap: 12, marginTop: 16 }}>
+        <input
+          placeholder="Rechercher (slug ou nom)…"
+          value={q}
+          onChange={(e) => {
+            setOffset(0);
+            setQ(e.target.value);
+          }}
+          style={{ padding: 10 }}
+        />
 
-        <select name="is_active" defaultValue={is_active} style={{ padding: 10 }}>
+        <select
+          value={isActive}
+          onChange={(e) => {
+            setOffset(0);
+            setIsActive(e.target.value);
+          }}
+          style={{ padding: 10 }}
+        >
           <option value="">Tous</option>
           <option value="true">Actifs</option>
           <option value="false">Inactifs</option>
         </select>
 
-        <input name="limit" type="number" min={1} max={200} defaultValue={limit} style={{ padding: 10 }} />
-        <button type="submit" style={{ padding: 10, fontWeight: 700 }}>
-          Filtrer
+        <input
+          type="number"
+          min={1}
+          max={200}
+          value={limit}
+          onChange={(e) => {
+            setOffset(0);
+            setLimit(Number(e.target.value || 50));
+          }}
+          style={{ padding: 10 }}
+        />
+
+        <button onClick={() => void load()} style={{ padding: 10, fontWeight: 800 }}>
+          {loading ? "…" : "Rafraîchir"}
         </button>
-      </form>
+      </div>
 
       {!data.ok && (
         <div style={{ marginTop: 16, padding: 12, background: "#ffecec", border: "1px solid #ffb3b3" }}>
-          <b>Erreur:</b> {data.error ?? "unknown"}
+          <b>Erreur:</b> {data.detail ?? data.error ?? "unknown"}
         </div>
       )}
 
       <div style={{ marginTop: 16, opacity: 0.8 }}>
-        Total: <b>{data.total ?? 0}</b> — offset {offset} — limit {limit}
+        Total: <b>{total}</b> — offset {offset} — limit {limit}
       </div>
 
       <div style={{ overflowX: "auto", marginTop: 12 }}>
@@ -109,7 +149,7 @@ export default async function AdminProductsPage({
                 <td style={{ padding: 10 }}>{p.category}</td>
                 <td style={{ padding: 10 }}>{p.price_month_eur ?? "-"}</td>
                 <td style={{ padding: 10 }}>{p.is_active ? "✅" : "❌"}</td>
-                <td style={{ padding: 10, display: "flex", gap: 10 }}>
+                <td style={{ padding: 10 }}>
                   <Link href={`/admin/products/${p.slug}`}>Éditer</Link>
                 </td>
               </tr>
@@ -119,16 +159,12 @@ export default async function AdminProductsPage({
       </div>
 
       <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
-        <Link
-          href={`/admin/products?${new URLSearchParams({ q, is_active, limit: String(limit), offset: String(prevOffset) }).toString()}`}
-        >
+        <button disabled={offset === 0} onClick={() => setOffset(prevOffset)} style={{ padding: "8px 12px" }}>
           ← Précédent
-        </Link>
-        <Link
-          href={`/admin/products?${new URLSearchParams({ q, is_active, limit: String(limit), offset: String(nextOffset) }).toString()}`}
-        >
+        </button>
+        <button disabled={nextOffset >= total} onClick={() => setOffset(nextOffset)} style={{ padding: "8px 12px" }}>
           Suivant →
-        </Link>
+        </button>
       </div>
     </main>
   );
