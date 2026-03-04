@@ -1,78 +1,75 @@
 import { NextResponse } from "next/server";
 
-function getUpstreamBase(): string {
-  const base = process.env.NEXT_PUBLIC_API_URL;
-  if (!base) throw new Error("NEXT_PUBLIC_API_URL is missing");
-  return base.replace(/\/+$/, "");
+function mustEnv(name: string): string {
+  const v = process.env[name];
+  if (!v) throw new Error(`${name} missing`);
+  return v;
 }
 
-function getAdminToken(): string {
-  const t = process.env.ADMIN_TOKEN;
-  if (!t) throw new Error("ADMIN_TOKEN is missing");
-  return t;
+type Ctx = { params: Promise<{ slug: string }> };
+
+function upstreamBase(): string {
+  return mustEnv("NEXT_PUBLIC_API_URL").replace(/\/+$/, "");
 }
 
-// GET ONE
-export async function GET(_req: Request, ctx: { params: { slug: string } }) {
+function adminToken(): string {
+  return mustEnv("ADMIN_TOKEN");
+}
+
+async function parseUpstreamResponse(upstream: Response) {
+  const text = await upstream.text().catch(() => "");
   try {
-    const base = getUpstreamBase();
-    const token = getAdminToken();
-    const slug = encodeURIComponent(ctx.params.slug);
+    return JSON.parse(text);
+  } catch {
+    return { raw: text };
+  }
+}
 
-    const upstream = await fetch(`${base}/admin/products/${slug}`, {
+export async function GET(_req: Request, ctx: Ctx) {
+  try {
+    const { slug } = await ctx.params;
+
+    const upstream = await fetch(`${upstreamBase()}/admin/products/${encodeURIComponent(slug)}`, {
       method: "GET",
-      headers: { "X-Admin-Token": token },
+      headers: { "X-Admin-Token": adminToken() },
       cache: "no-store",
     });
 
-    const text = await upstream.text();
-    let data: any;
-    try { data = JSON.parse(text); } catch { data = { raw: text }; }
+    const data = await parseUpstreamResponse(upstream);
     return NextResponse.json(data, { status: upstream.status });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e?.message || String(e) }, { status: 500 });
   }
 }
 
-// UPDATE (multipart)
-export async function PUT(req: Request, ctx: { params: { slug: string } }) {
+export async function PUT(req: Request, ctx: Ctx) {
   try {
-    const base = getUpstreamBase();
-    const token = getAdminToken();
-    const slug = encodeURIComponent(ctx.params.slug);
-
+    const { slug } = await ctx.params;
     const form = await req.formData();
 
-    const upstream = await fetch(`${base}/admin/products/${slug}`, {
+    const upstream = await fetch(`${upstreamBase()}/admin/products/${encodeURIComponent(slug)}`, {
       method: "PUT",
-      headers: { "X-Admin-Token": token },
+      headers: { "X-Admin-Token": adminToken() },
       body: form,
     });
 
-    const text = await upstream.text();
-    let data: any;
-    try { data = JSON.parse(text); } catch { data = { raw: text }; }
+    const data = await parseUpstreamResponse(upstream);
     return NextResponse.json(data, { status: upstream.status });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e?.message || String(e) }, { status: 500 });
   }
 }
 
-// SOFT DELETE
-export async function DELETE(_req: Request, ctx: { params: { slug: string } }) {
+export async function DELETE(_req: Request, ctx: Ctx) {
   try {
-    const base = getUpstreamBase();
-    const token = getAdminToken();
-    const slug = encodeURIComponent(ctx.params.slug);
+    const { slug } = await ctx.params;
 
-    const upstream = await fetch(`${base}/admin/products/${slug}`, {
+    const upstream = await fetch(`${upstreamBase()}/admin/products/${encodeURIComponent(slug)}`, {
       method: "DELETE",
-      headers: { "X-Admin-Token": token },
+      headers: { "X-Admin-Token": adminToken() },
     });
 
-    const text = await upstream.text();
-    let data: any;
-    try { data = JSON.parse(text); } catch { data = { raw: text }; }
+    const data = await parseUpstreamResponse(upstream);
     return NextResponse.json(data, { status: upstream.status });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e?.message || String(e) }, { status: 500 });
