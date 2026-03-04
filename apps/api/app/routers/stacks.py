@@ -28,11 +28,13 @@ def _stack_to_out(s) -> StackOut:
         )
 
     return StackOut(
-        slug=s.slug,
-        title=s.title,
-        subtitle=s.subtitle or "",
-        description=s.description or "",
-        products=products,
+        "id": s.id,
+        "slug": s.slug,
+        "title": s.title,
+        "subtitle": s.subtitle or "",
+        # ✅ compat: nouveaux schémas = description_md, anciens = description
+        "description": (getattr(s, "description_md", None) or getattr(s, "description", None) or ""),
+        "is_active": bool(s.is_active),
     )
 
 
