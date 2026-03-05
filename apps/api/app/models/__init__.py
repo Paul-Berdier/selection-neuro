@@ -7,6 +7,8 @@ from app.models.product_benefit import ProductBenefit
 from app.models.study import Study
 from app.models.product_study import ProductStudy
 from app.models.invite import InviteRequest
+from app.models.user import User
+
 
 __all__ = [
     "Media",
@@ -18,4 +20,5 @@ __all__ = [
     "Study",
     "ProductStudy",
     "InviteRequest",
+    "User"
 ]

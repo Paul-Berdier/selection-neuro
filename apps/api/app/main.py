@@ -14,6 +14,7 @@ from app.routers.invite import router as invite_router
 from app.routers.media import router as media_router
 from app.routers.admin_migrate import router as admin_migrate_router
 from app.routers.admin_products import router as admin_products_router
+from app.routers.auth import router as auth_router
 
 setup_logging()
 
@@ -41,3 +42,4 @@ app.include_router(invite_router)
 app.include_router(media_router)
 app.include_router(admin_migrate_router)
 app.include_router(admin_products_router)
+app.include_router(auth_router)

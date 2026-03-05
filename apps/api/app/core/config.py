@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = Field(default="http://localhost:3000")
     ADMIN_TOKEN: str = Field(default="")
 
+    JWT_SECRET: str
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+
     @property
     def database_url(self) -> str:
         return normalize_database_url(self.DATABASE_URL)
