@@ -8,7 +8,10 @@ from app.models.study import Study
 from app.models.product_study import ProductStudy
 from app.models.invite import InviteRequest
 from app.models.user import User
-
+from app.models.cart import Cart
+from app.models.cart_item import CartItem
+from app.models.order import Order
+from app.models.order_item import OrderItem
 
 __all__ = [
     "Media",
@@ -20,5 +23,9 @@ __all__ = [
     "Study",
     "ProductStudy",
     "InviteRequest",
-    "User"
+    "User",
+    "Cart",
+    "CartItem",
+    "Order",
+    "OrderItem"
 ]
