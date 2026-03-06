@@ -64,16 +64,35 @@ def get_cart(db: Session = Depends(get_db), user: User = Depends(get_current_use
 
 
 @router.post("/items", response_model=CartOut)
-def add_item(payload: CartItemAddIn, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def add_item(
+    payload: CartItemAddIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     cart = ensure_cart(db, user.id)
 
-    product = db.query(Product).filter(Product.id == payload.product_id, Product.is_active == True).first()
+    product = (
+        db.query(Product)
+        .filter(Product.id == payload.product_id, Product.is_active == True)  # noqa: E712
+        .first()
+    )
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    item = db.query(CartItem).filter(CartItem.cart_id == cart.id, CartItem.product_id == product.id).first()
+    item = (
+        db.query(CartItem)
+        .filter(CartItem.cart_id == cart.id, CartItem.product_id == product.id)
+        .first()
+    )
+
+    desired_qty = payload.quantity if not item else (item.quantity + payload.quantity)
+
+    # ✅ Stock check (None => unlimited)
+    if product.stock_qty is not None and desired_qty > product.stock_qty:
+        raise HTTPException(status_code=400, detail="Insufficient stock")
+
     if item:
-        item.quantity = min(99, item.quantity + payload.quantity)
+        item.quantity = min(99, desired_qty)
     else:
         item = CartItem(cart_id=cart.id, product_id=product.id, quantity=payload.quantity)
         db.add(item)
@@ -84,11 +103,24 @@ def add_item(payload: CartItemAddIn, db: Session = Depends(get_db), user: User =
 
 
 @router.patch("/items/{item_id}", response_model=CartOut)
-def update_item(item_id: int, payload: CartItemUpdateIn, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def update_item(
+    item_id: int,
+    payload: CartItemUpdateIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     cart = ensure_cart(db, user.id)
     item = db.query(CartItem).filter(CartItem.id == item_id, CartItem.cart_id == cart.id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Cart item not found")
+
+    # ✅ Stock check vs product
+    product = db.query(Product).filter(Product.id == item.product_id).first()
+    if not product:
+        raise HTTPException(status_code=400, detail="Product unavailable")
+
+    if product.stock_qty is not None and payload.quantity > product.stock_qty:
+        raise HTTPException(status_code=400, detail="Insufficient stock")
 
     item.quantity = payload.quantity
     db.commit()
@@ -97,7 +129,11 @@ def update_item(item_id: int, payload: CartItemUpdateIn, db: Session = Depends(g
 
 
 @router.delete("/items/{item_id}", response_model=CartOut)
-def delete_item(item_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def delete_item(
+    item_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     cart = ensure_cart(db, user.id)
     item = db.query(CartItem).filter(CartItem.id == item_id, CartItem.cart_id == cart.id).first()
     if not item:

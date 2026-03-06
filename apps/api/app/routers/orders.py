@@ -6,11 +6,10 @@ from sqlalchemy.orm import Session
 from app.core.deps import get_current_user
 from app.db.session import get_db
 from app.models import Cart, Order, OrderItem, Product
-from app.models.user import User
-from app.schemas.order import OrderListOut, OrderOut
-from app.models.address import Address  # add import en haut
 from app.models.address import Address
+from app.models.user import User
 from app.schemas.address import OrderAddressesIn
+from app.schemas.order import OrderListOut, OrderOut
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
@@ -66,9 +65,19 @@ def create_order_from_cart(db: Session = Depends(get_db), user: User = Depends(g
 
     total = 0.0
     for ci in cart.items:
-        product = db.query(Product).filter(Product.id == ci.product_id, Product.is_active == True).first()
+        product = (
+            db.query(Product)
+            .filter(Product.id == ci.product_id, Product.is_active == True)  # noqa: E712
+            .first()
+        )
         if not product:
             raise HTTPException(status_code=400, detail=f"Product unavailable: {ci.product_id}")
+
+        # ✅ Stock check + reserve
+        if product.stock_qty is not None:
+            if ci.quantity > product.stock_qty:
+                raise HTTPException(status_code=400, detail=f"Insufficient stock for product {product.id}")
+            product.stock_qty -= ci.quantity
 
         unit_price = float(getattr(product, "price_month_eur", 0) or 0)
         line_total = unit_price * ci.quantity
@@ -97,35 +106,6 @@ def create_order_from_cart(db: Session = Depends(get_db), user: User = Depends(g
     return order_to_out(order)
 
 
-@router.post("/{order_id}/addresses", response_model=OrderOut)
-def set_order_addresses(
-    order_id: int,
-    shipping_address_id: int,
-    billing_address_id: int | None = None,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    order = db.query(Order).filter(Order.id == order_id, Order.user_id == user.id).first()
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
-
-    ship = db.query(Address).filter(Address.id == shipping_address_id, Address.user_id == user.id).first()
-    if not ship:
-        raise HTTPException(status_code=404, detail="Shipping address not found")
-
-    bill = None
-    if billing_address_id is not None:
-        bill = db.query(Address).filter(Address.id == billing_address_id, Address.user_id == user.id).first()
-        if not bill:
-            raise HTTPException(status_code=404, detail="Billing address not found")
-
-    order.shipping_address_id = ship.id
-    order.billing_address_id = bill.id if bill else None
-    db.commit()
-    db.refresh(order)
-    _ = order.items
-    return order_to_out(order)
-
 @router.put("/{order_id}/addresses", response_model=OrderOut)
 def set_order_addresses(
     order_id: int,
@@ -141,9 +121,8 @@ def set_order_addresses(
     if not ship:
         raise HTTPException(status_code=404, detail="Shipping address not found")
 
-    bill_id = payload.billing_address_id
-    if bill_id is not None:
-        bill = db.query(Address).filter(Address.id == bill_id, Address.user_id == user.id).first()
+    if payload.billing_address_id is not None:
+        bill = db.query(Address).filter(Address.id == payload.billing_address_id, Address.user_id == user.id).first()
         if not bill:
             raise HTTPException(status_code=404, detail="Billing address not found")
         order.billing_address_id = bill.id

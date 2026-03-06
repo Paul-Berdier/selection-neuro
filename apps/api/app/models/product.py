@@ -31,6 +31,8 @@ class Product(Base):
     )
     image_media = relationship("Media", lazy="joined")
 
+    stock_qty: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     stack_products = relationship(
