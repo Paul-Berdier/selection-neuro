@@ -8,6 +8,9 @@ from app.db.session import get_db
 from app.models import Cart, Order, OrderItem, Product
 from app.models.user import User
 from app.schemas.order import OrderListOut, OrderOut
+from app.models.address import Address  # add import en haut
+from app.models.address import Address
+from app.schemas.address import OrderAddressesIn
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
@@ -87,6 +90,67 @@ def create_order_from_cart(db: Session = Depends(get_db), user: User = Depends(g
     # vide le panier
     for ci in list(cart.items):
         db.delete(ci)
+
+    db.commit()
+    db.refresh(order)
+    _ = order.items
+    return order_to_out(order)
+
+
+@router.post("/{order_id}/addresses", response_model=OrderOut)
+def set_order_addresses(
+    order_id: int,
+    shipping_address_id: int,
+    billing_address_id: int | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    order = db.query(Order).filter(Order.id == order_id, Order.user_id == user.id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    ship = db.query(Address).filter(Address.id == shipping_address_id, Address.user_id == user.id).first()
+    if not ship:
+        raise HTTPException(status_code=404, detail="Shipping address not found")
+
+    bill = None
+    if billing_address_id is not None:
+        bill = db.query(Address).filter(Address.id == billing_address_id, Address.user_id == user.id).first()
+        if not bill:
+            raise HTTPException(status_code=404, detail="Billing address not found")
+
+    order.shipping_address_id = ship.id
+    order.billing_address_id = bill.id if bill else None
+    db.commit()
+    db.refresh(order)
+    _ = order.items
+    return order_to_out(order)
+
+@router.put("/{order_id}/addresses", response_model=OrderOut)
+def set_order_addresses(
+    order_id: int,
+    payload: OrderAddressesIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    order = db.query(Order).filter(Order.id == order_id, Order.user_id == user.id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    ship = db.query(Address).filter(Address.id == payload.shipping_address_id, Address.user_id == user.id).first()
+    if not ship:
+        raise HTTPException(status_code=404, detail="Shipping address not found")
+
+    bill_id = payload.billing_address_id
+    if bill_id is not None:
+        bill = db.query(Address).filter(Address.id == bill_id, Address.user_id == user.id).first()
+        if not bill:
+            raise HTTPException(status_code=404, detail="Billing address not found")
+        order.billing_address_id = bill.id
+    else:
+        order.billing_address_id = None
+
+    order.shipping_address_id = ship.id
 
     db.commit()
     db.refresh(order)

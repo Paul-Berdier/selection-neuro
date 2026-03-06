@@ -17,6 +17,8 @@ from app.routers.admin_products import router as admin_products_router
 from app.routers.auth import router as auth_router
 from app.routers.cart import router as cart_router
 from app.routers.orders import router as orders_router
+from app.routers.payments_stripe import router as stripe_payments_router
+from app.routers.addresses import router as addresses_router
 
 setup_logging()
 
@@ -47,3 +49,5 @@ app.include_router(admin_products_router)
 app.include_router(auth_router)
 app.include_router(cart_router)
 app.include_router(orders_router)
+app.include_router(stripe_payments_router)
+app.include_router(addresses_router)

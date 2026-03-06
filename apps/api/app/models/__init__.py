@@ -12,6 +12,8 @@ from app.models.cart import Cart
 from app.models.cart_item import CartItem
 from app.models.order import Order
 from app.models.order_item import OrderItem
+from app.models.stripe_event import StripeEvent
+from app.models.address import Address
 
 __all__ = [
     "Media",
@@ -27,5 +29,7 @@ __all__ = [
     "Cart",
     "CartItem",
     "Order",
-    "OrderItem"
+    "OrderItem",
+    "StripeEvent",
+    "Address"
 ]

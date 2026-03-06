@@ -14,6 +14,7 @@ os.environ.setdefault("JWT_SECRET", "change_me_super_long_random")
 os.environ.setdefault("JWT_ALGORITHM", "HS256")
 os.environ.setdefault("ACCESS_TOKEN_EXPIRE_MINUTES", "60")
 os.environ.setdefault("REFRESH_TOKEN_EXPIRE_DAYS", "30")
+os.environ.setdefault("STRIPE_MOCK", "true")
 
 TEST_DB_URL = os.environ["DATABASE_URL"]
 
