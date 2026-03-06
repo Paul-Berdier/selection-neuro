@@ -20,6 +20,7 @@ from app.routers.orders import router as orders_router
 from app.routers.payments_stripe import router as stripe_payments_router
 from app.routers.addresses import router as addresses_router
 from app.routers.admin_inventory import router as admin_inventory_router
+from app.routers.admin_orders import router as admin_orders_router
 
 setup_logging()
 
@@ -53,3 +54,4 @@ app.include_router(orders_router)
 app.include_router(stripe_payments_router)
 app.include_router(addresses_router)
 app.include_router(admin_inventory_router)
+app.include_router(admin_orders_router)
