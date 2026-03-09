@@ -1,9 +1,13 @@
+// apps/web/src/app/layout.tsx
 import type { Metadata } from "next";
+import Link from "next/link";
 import "./globals.css";
+import { CartIndicator } from "@/components/cart/CartIndicator";
+import { AuthIndicator } from "@/components/auth/AuthIndicator";
 
 export const metadata: Metadata = {
-  title: "Selection Neuro – Blagnac",
-  description: "Site vitrine + API FastAPI",
+  title: "Selection Neuro",
+  description: "E-commerce – Selection Neuro",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -12,12 +16,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <div className="min-h-screen">
           <header className="border-b">
-            <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
-              <div className="font-semibold tracking-tight">Selection Neuro</div>
-              <nav className="flex gap-5 text-sm text-neutral-600">
-                <a className="no-underline hover:underline" href="#stacks">Stacks</a>
-                <a className="no-underline hover:underline" href="#produits">Produits</a>
-                <a className="no-underline hover:underline" href="#invite">Invitation</a>
+            <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between gap-6">
+              <Link href="/" className="font-semibold tracking-tight no-underline">
+                Selection Neuro
+              </Link>
+
+              <nav className="flex items-center gap-5 text-sm text-neutral-700">
+                <Link className="no-underline hover:underline" href="/products">
+                  Produits
+                </Link>
+                <Link className="no-underline hover:underline" href="/cart">
+                  Panier <CartIndicator />
+                </Link>
+                <Link className="no-underline hover:underline" href="/account/orders">
+                  Commandes
+                </Link>
+                <AuthIndicator />
               </nav>
             </div>
           </header>

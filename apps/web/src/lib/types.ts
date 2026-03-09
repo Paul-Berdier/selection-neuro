@@ -1,107 +1,50 @@
-// apps/web/src/lib/types.ts
+"use server";
 
-export type ApiError = {
-  ok: false;
-  error?: string;
-  detail?: string;
-  raw?: any;
-};
+import { cookies } from "next/headers";
 
-export type ApiOk<T> = { ok: true } & T;
-export type ApiResp<T> = ApiOk<T> | ApiError;
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
-export type Product = {
-  id: number;
-  slug: string;
-  name: string;
-  short_desc: string;
-  category: string;
-  description_md: string;
-  price_month_eur: number | null;
-  image_media_id: number | null;
-  is_active: boolean;
-};
+export async function registerAction(formData: FormData) {
+  const email = String(formData.get("email") || "");
+  const password = String(formData.get("password") || "");
 
-/**
- * --- STACKS (public API) ---
- * Aligné avec ton StackOut côté API:
- *   slug, title, subtitle, description, products[]
- */
-export type StackProduct = {
-  product_slug: string;
-  product_name: string;
-  product_short_desc: string;
-  product_category: string;
-  dosage_value: number | null;
-  dosage_unit: string;
-  note: string;
-};
+  const res = await fetch(`${BASE}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    body: JSON.stringify({ email, password }),
+    cache: "no-store",
+  });
 
-export type Stack = {
-  slug: string;
-  title: string;
-  subtitle: string;
-  description: string;
-  products: StackProduct[];
-};
-
-export type StackListOut = {
-  items: Stack[];
-};
-
-export type ProductListResponse = ApiResp<{
-  total: number;
-  limit: number;
-  offset: number;
-  items: Product[];
-}>;
-
-export type ProductGetResponse = ApiResp<{
-  product: Product;
-}>;
-
-export type ProductUpsertResponse = ApiResp<{
-  product: Product;
-  benefits_added?: string[];
-  benefits_mode?: "append" | "replace";
-}>;
-
-export type ProductDeleteResponse = ApiResp<{
-  slug: string;
-  is_active: boolean;
-}>;
-
-export function getErrorMessage(x: any): string {
-  return x?.detail || x?.error || "Unknown error";
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
 }
 
-export function formatApiError(x: any): string {
-  if (!x) return "Erreur inconnue";
+export async function loginAction(formData: FormData) {
+  const email = String(formData.get("email") || "");
+  const password = String(formData.get("password") || "");
 
-  // FastAPI / Pydantic: detail peut être string OU array d'objets
-  const d = x.detail ?? x.error ?? x.message ?? x;
+  const res = await fetch(`${BASE}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    body: JSON.stringify({ email, password }),
+    cache: "no-store",
+  });
 
-  if (typeof d === "string") return d;
+  if (!res.ok) throw new Error(await res.text());
+  const data = await res.json();
 
-  if (Array.isArray(d)) {
-    // format Pydantic: [{loc, msg, type, ...}, ...]
-    return d
-      .map((e: any) => {
-        const loc = Array.isArray(e?.loc) ? e.loc.join(".") : e?.loc;
-        const msg = e?.msg || JSON.stringify(e);
-        return loc ? `${loc}: ${msg}` : msg;
-      })
-      .join("\n");
-  }
+  // Cookie HttpOnly
+  cookies().set("access_token", data.access_token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/",
+  });
 
-  if (typeof d === "object") {
-    // dernier recours: stringify
-    try {
-      return JSON.stringify(d);
-    } catch {
-      return String(d);
-    }
-  }
+  return { ok: true };
+}
 
-  return String(d);
+export async function logoutAction() {
+  cookies().delete("access_token");
+  return { ok: true };
 }
