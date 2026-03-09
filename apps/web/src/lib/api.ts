@@ -1,63 +1,84 @@
-// apps/web/src/lib/api.ts
+// src/lib/api.ts
+import { cookies } from "next/headers";
 
-function apiBase(): string {
-  const base = process.env.NEXT_PUBLIC_API_URL;
-  if (!base) throw new Error("NEXT_PUBLIC_API_URL is missing");
-  return base.replace(/\/+$/, "");
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+
+function authHeaderFromCookies() {
+  const token = cookies().get("access_token")?.value;
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-function makeUrl(path: string): string {
-  const base = apiBase();
-  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
-}
-
-export async function apiGet<T>(path: string): Promise<T> {
-  const url = makeUrl(path);
-  const res = await fetch(url, { cache: "no-store" });
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    console.error("[apiGet] non-OK:", url, res.status, text);
-    throw new Error(`API error ${res.status} on ${path}`);
-  }
-
-  return (await res.json()) as T;
-}
-
-/**
- * POST JSON helper (used by src/app/page.tsx in your project)
- */
-export async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  return apiJson<T>(path, {
-    method: "POST",
-    body: JSON.stringify(body ?? {}),
-  });
-}
-
-export async function apiJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const url = makeUrl(path);
-
-  const res = await fetch(url, {
+export async function apiGet<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
     ...init,
     headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
+      "Accept": "application/json",
+      ...(init.headers || {}),
+      ...authHeaderFromCookies(),
     },
     cache: "no-store",
   });
 
-  const text = await res.text().catch(() => "");
-  let data: any;
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = { raw: text };
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`GET ${path} -> ${res.status} ${txt}`);
   }
+  return res.json();
+}
+
+export async function apiPost<T>(path: string, body?: any, init: RequestInit = {}): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      ...(init.headers || {}),
+      ...authHeaderFromCookies(),
+    },
+    body: body == null ? undefined : JSON.stringify(body),
+    cache: "no-store",
+  });
 
   if (!res.ok) {
-    console.error("[apiJson] non-OK:", url, res.status, data);
-    throw new Error(`API error ${res.status} on ${path}`);
+    const txt = await res.text().catch(() => "");
+    throw new Error(`POST ${path} -> ${res.status} ${txt}`);
   }
+  return res.json();
+}
 
-  return data as T;
+export async function apiPatch<T>(path: string, body?: any): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      ...authHeaderFromCookies(),
+    },
+    body: body == null ? undefined : JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`PATCH ${path} -> ${res.status} ${txt}`);
+  }
+  return res.json();
+}
+
+export async function apiDelete<T>(path: string): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "DELETE",
+    headers: {
+      "Accept": "application/json",
+      ...authHeaderFromCookies(),
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`DELETE ${path} -> ${res.status} ${txt}`);
+  }
+  return res.json();
 }
