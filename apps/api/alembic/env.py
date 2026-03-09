@@ -23,15 +23,13 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
-def _get_database_url() -> str:
-    """
-    Priority:
-    1) OS env var DATABASE_URL (Railway / Docker / CI)
-    2) settings.database_url (can come from .env in dev)
-    """
+def get_url() -> str:
+    import os
+    from app.core.db_url import normalize_database_url
+
     env_url = os.getenv("DATABASE_URL")
     if env_url and env_url.strip():
-        return env_url.strip()
+        return normalize_database_url(env_url.strip())
 
     return settings.database_url
 
