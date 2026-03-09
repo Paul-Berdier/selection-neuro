@@ -29,6 +29,7 @@ export default async function OrdersPage() {
                   <div className="font-semibold">Commande #{o.id}</div>
                   <div className="text-sm text-neutral-600">
                     {o.items.length} article(s)
+
                   </div>
                 </div>
 
