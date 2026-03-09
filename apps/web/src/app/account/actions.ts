@@ -39,7 +39,9 @@ export async function loginAction(formData: FormData) {
   if (!res.ok) throw new Error(await readError(res));
   const data = await res.json();
 
-  cookies().set("access_token", data.access_token, {
+  const cookieStore = await cookies(); // ✅ Next 15: cookies() is async
+
+  cookieStore.set("access_token", data.access_token, {
     httpOnly: true,
     secure: true,
     sameSite: "lax",
@@ -50,6 +52,7 @@ export async function loginAction(formData: FormData) {
 }
 
 export async function logoutAction() {
-  cookies().delete("access_token");
+  const cookieStore = await cookies();
+  cookieStore.delete("access_token");
   return { ok: true };
 }
