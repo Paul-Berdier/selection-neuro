@@ -2,6 +2,8 @@
 set -e
 
 echo "[entrypoint] Running migrations..."
+echo "[entrypoint] ENV=$ENV"
+echo "[entrypoint] DATABASE_URL=${DATABASE_URL}"
 alembic upgrade head
 
 echo "[entrypoint] Starting API..."

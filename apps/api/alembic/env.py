@@ -2,30 +2,33 @@
 
 from __future__ import annotations
 
+import os
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config, pool
 from alembic import context
+from sqlalchemy import engine_from_config, pool
 
 from app.core.config import settings
 from app.db.base import Base
-import app.models  # noqa: F401 (register models)
+import app.models  # noqa: F401  (ensure models are imported and registered)
 
+# Alembic Config object
 config = context.config
+
+# Configure Python logging via alembic.ini
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+# Metadata for autogenerate support
 target_metadata = Base.metadata
 
 
-def get_url() -> str:
+def _get_database_url() -> str:
     """
     Priority:
-    1) OS env var DATABASE_URL (pratique en CI / PowerShell / Railway / Docker)
-    2) settings.database_url (qui peut venir d'un .env chargé par l'app)
+    1) OS env var DATABASE_URL (Railway / Docker / CI)
+    2) settings.database_url (can come from .env in dev)
     """
-    import os
-
     env_url = os.getenv("DATABASE_URL")
     if env_url and env_url.strip():
         return env_url.strip()
@@ -34,7 +37,14 @@ def get_url() -> str:
 
 
 def run_migrations_offline() -> None:
-    url = get_url()
+    """
+    Run migrations in 'offline' mode: no DBAPI connection, SQL emitted to output.
+    """
+    url = _get_database_url()
+
+    # Force url into alembic config as well (useful for consistent behavior)
+    config.set_main_option("sqlalchemy.url", url)
+
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -48,8 +58,17 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
+    """
+    Run migrations in 'online' mode: uses SQLAlchemy Engine + DB connection.
+    """
+    url = _get_database_url()
+
+    # ✅ Force Alembic to use runtime DATABASE_URL (ignore stale alembic.ini)
+    config.set_main_option("sqlalchemy.url", url)
+
+    # engine_from_config reads from config.get_section(...) using prefix "sqlalchemy."
     configuration = config.get_section(config.config_ini_section) or {}
-    configuration["sqlalchemy.url"] = get_url()
+    configuration["sqlalchemy.url"] = url
 
     connectable = engine_from_config(
         configuration,
