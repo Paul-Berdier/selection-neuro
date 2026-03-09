@@ -5,7 +5,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# deps système minimales
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential curl \
   && rm -rf /var/lib/apt/lists/*
@@ -15,5 +14,7 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY apps/api /app
 
-# Railway fournit $PORT
-CMD ["sh", "-lc", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# rendre le script exécutable
+RUN chmod +x /app/entrypoint.sh
+
+CMD ["sh", "/app/entrypoint.sh"]
