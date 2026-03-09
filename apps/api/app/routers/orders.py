@@ -10,6 +10,7 @@ from app.models.address import Address
 from app.models.user import User
 from app.schemas.address import OrderAddressesIn
 from app.schemas.order import OrderListOut, OrderOut
+from app.services.order_pricing import recompute_order_totals
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
@@ -33,7 +34,19 @@ def order_to_out(order: Order) -> OrderOut:
         status=order.status,
         payment_status=order.payment_status,
         currency=order.currency,
+
         total_amount=float(order.total_amount),
+
+        subtotal_amount=float(order.subtotal_amount),
+        shipping_amount=float(order.shipping_amount),
+        tax_amount=float(order.tax_amount),
+        grand_total_amount=float(order.grand_total_amount),
+        shipping_method=order.shipping_method,
+        tax_rate=float(order.tax_rate),
+
+        shipping_address_id=getattr(order, "shipping_address_id", None),
+        billing_address_id=getattr(order, "billing_address_id", None),
+
         items=items_out,
     )
 
@@ -94,7 +107,13 @@ def create_order_from_cart(db: Session = Depends(get_db), user: User = Depends(g
             )
         )
 
-    order.total_amount = round(total, 2)
+    # ✅ init totals breakdown (shipping/tax unknown until address is set)
+    subtotal = round(total, 2)
+    order.subtotal_amount = subtotal
+    order.shipping_amount = 0
+    order.tax_amount = 0
+    order.grand_total_amount = subtotal
+    order.total_amount = subtotal  # keep legacy in sync
 
     # vide le panier
     for ci in list(cart.items):
@@ -130,6 +149,10 @@ def set_order_addresses(
         order.billing_address_id = None
 
     order.shipping_address_id = ship.id
+
+    # ✅ recompute totals now that we have shipping address
+    _ = order.items
+    recompute_order_totals(order, shipping_address=ship)
 
     db.commit()
     db.refresh(order)

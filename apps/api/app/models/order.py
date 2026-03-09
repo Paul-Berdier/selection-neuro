@@ -22,7 +22,18 @@ class Order(Base):
     payment_status: Mapped[str] = mapped_column(String(32), nullable=False, server_default=text("'unpaid'"))
 
     currency: Mapped[str] = mapped_column(String(8), nullable=False, server_default=text("'EUR'"))
+
+    # legacy/simple total (keep for compatibility)
     total_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, server_default=text("0"))
+
+    # ✅ professional breakdown
+    subtotal_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, server_default=text("0"))
+    shipping_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, server_default=text("0"))
+    tax_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, server_default=text("0"))
+    grand_total_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, server_default=text("0"))
+
+    shipping_method: Mapped[str] = mapped_column(String(32), nullable=False, server_default=text("'standard'"))
+    tax_rate: Mapped[float] = mapped_column(Numeric(5, 4), nullable=False, server_default=text("0.2000"))
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")
