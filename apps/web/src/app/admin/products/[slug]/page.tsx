@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Product, formatApiError } from "@/lib/types";
+import { Product } from "@/lib/types";
+import { formatApiError } from "@/lib/errors";
 
 function normalizeForm(form: FormData) {
   // is_active

@@ -1,61 +1,126 @@
-"use server";
+// apps/web/src/lib/types.ts
 
-import { cookies } from "next/headers";
+export type Money = number;
 
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+/** --- Products --- */
+export interface Product {
+  id: number;
+  slug: string;
+  name: string;
 
-export async function registerAction(formData: FormData) {
-  const email = String(formData.get("email") || "");
-  const password = String(formData.get("password") || "");
+  short_desc?: string;
+  description_md?: string;
 
-  const res = await fetch(`${BASE}/auth/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Accept": "application/json" },
-    body: JSON.stringify({ email, password }),
-    cache: "no-store",
-  });
+  category?: string;
 
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  price_month_eur?: Money | null;
+
+  image_media_id?: number | null;
+  image_url?: string | null;
+
+  is_active?: boolean;
+
+  // inventory
+  stock_qty?: number | null;
 }
 
-export async function loginAction(formData: FormData) {
-  const email = String(formData.get("email") || "");
-  const password = String(formData.get("password") || "");
+/** --- Stacks --- */
+export interface StackProduct {
+  id?: number;
+  stack_id?: number;
 
-  const res = await fetch(`${BASE}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Accept": "application/json" },
-    body: JSON.stringify({ email, password }),
-    cache: "no-store",
-  });
+  product_id: number;
+  dosage?: number | null;
+  unit?: string | null;
+  note?: string | null;
 
-  if (!res.ok) throw new Error(await res.text());
-  const data = await res.json();
-
-  // Cookie HttpOnly
-  cookies().set("access_token", data.access_token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    path: "/",
-  });
-
-  return { ok: true };
+  // often joined by API in stack details
+  product?: Product;
 }
 
-export async function logoutAction() {
-  cookies().delete("access_token");
-  return { ok: true };
+export interface Stack {
+  id: number;
+  slug: string;
+  name: string;
+
+  short_desc?: string;
+  description_md?: string;
+  category?: string;
+
+  items?: StackProduct[];
 }
 
-export function formatApiError(err: unknown): string {
-  if (err instanceof Error) return err.message;
+/** --- Cart --- */
+export interface CartItemOut {
+  id: number;
+  product_id: number;
+  quantity: number;
 
-  try {
-    if (typeof err === "string") return err;
-    return JSON.stringify(err);
-  } catch {
-    return "Unknown error";
-  }
+  product_name: string;
+  unit_price: Money;
+
+  image_url?: string | null;
+}
+
+export interface CartOut {
+  id: number;
+  items: CartItemOut[];
+  total_items: number;
+  subtotal: Money;
+}
+
+/** --- Orders --- */
+export interface OrderItemOut {
+  id: number;
+  product_id: number;
+
+  product_name: string;
+  unit_price: Money;
+  quantity: number;
+  line_total: Money;
+}
+
+export interface OrderOut {
+  id: number;
+  status: string;
+  payment_status: string;
+  currency: string;
+
+  // compatibility + current total
+  total_amount: Money;
+
+  // professional breakdown (if enabled in API)
+  subtotal_amount?: Money;
+  shipping_amount?: Money;
+  tax_amount?: Money;
+  grand_total_amount?: Money;
+
+  shipping_method?: string;
+  tax_rate?: number;
+
+  shipping_address_id?: number | null;
+  billing_address_id?: number | null;
+
+  items: OrderItemOut[];
+}
+
+export interface OrderListOut {
+  items: OrderOut[];
+}
+
+/** --- Admin list wrappers (if your API returns these shapes) --- */
+export interface AdminListOut<T> {
+  ok: boolean;
+  total: number;
+  limit: number;
+  offset: number;
+  items: T[];
+}
+
+/** --- Stripe checkout response --- */
+export interface StripeCheckoutSessionOut {
+  ok: boolean;
+  order_id: number;
+  session_id: string;
+  checkout_url: string;
 }

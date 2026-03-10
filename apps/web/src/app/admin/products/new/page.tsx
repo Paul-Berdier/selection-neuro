@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { formatApiError } from "@/lib/types";
+import { formatApiError } from "@/lib/errors";
 
 function normalizeForm(form: FormData) {
   // is_active
