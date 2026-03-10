@@ -3,8 +3,9 @@ import { cookies } from "next/headers";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
-function authHeaderFromCookies() {
-  const token = cookies().get("access_token")?.value;
+async function authHeaderFromCookies() {
+  const cookieStore = await cookies(); // ✅ Next 15
+  const token = cookieStore.get("access_token")?.value;
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -14,12 +15,14 @@ async function readError(res: Response) {
 }
 
 export async function apiGet<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const auth = await authHeaderFromCookies();
+
   const res = await fetch(`${BASE}${path}`, {
     ...init,
     headers: {
       Accept: "application/json",
       ...(init.headers || {}),
-      ...authHeaderFromCookies(),
+      ...auth,
     },
     cache: "no-store",
   });
@@ -29,6 +32,8 @@ export async function apiGet<T>(path: string, init: RequestInit = {}): Promise<T
 }
 
 export async function apiPost<T>(path: string, body?: any, init: RequestInit = {}): Promise<T> {
+  const auth = await authHeaderFromCookies();
+
   const res = await fetch(`${BASE}${path}`, {
     method: "POST",
     ...init,
@@ -36,7 +41,7 @@ export async function apiPost<T>(path: string, body?: any, init: RequestInit = {
       "Content-Type": "application/json",
       Accept: "application/json",
       ...(init.headers || {}),
-      ...authHeaderFromCookies(),
+      ...auth,
     },
     body: body == null ? undefined : JSON.stringify(body),
     cache: "no-store",
@@ -47,12 +52,14 @@ export async function apiPost<T>(path: string, body?: any, init: RequestInit = {
 }
 
 export async function apiPatch<T>(path: string, body?: any): Promise<T> {
+  const auth = await authHeaderFromCookies();
+
   const res = await fetch(`${BASE}${path}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
-      ...authHeaderFromCookies(),
+      ...auth,
     },
     body: body == null ? undefined : JSON.stringify(body),
     cache: "no-store",
@@ -63,11 +70,13 @@ export async function apiPatch<T>(path: string, body?: any): Promise<T> {
 }
 
 export async function apiDelete<T>(path: string): Promise<T> {
+  const auth = await authHeaderFromCookies();
+
   const res = await fetch(`${BASE}${path}`, {
     method: "DELETE",
     headers: {
       Accept: "application/json",
-      ...authHeaderFromCookies(),
+      ...auth,
     },
     cache: "no-store",
   });

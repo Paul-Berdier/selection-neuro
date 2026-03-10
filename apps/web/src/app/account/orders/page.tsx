@@ -1,7 +1,7 @@
-// apps/web/src/app/account/orders/page.tsx
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+
 import { apiGet } from "@/lib/api";
 import type { OrderListOut } from "@/lib/types";
 import { Section } from "@/components/Section";
@@ -11,7 +11,9 @@ import { Badge } from "@/components/Badge";
 export const dynamic = "force-dynamic";
 
 export default async function OrdersPage() {
-  const token = cookies().get("access_token")?.value;
+  const cookieStore = await cookies(); // ✅ Next 15
+  const token = cookieStore.get("access_token")?.value;
+
   if (!token) redirect("/account/login");
 
   const data = await apiGet<OrderListOut>("/orders");
@@ -27,14 +29,13 @@ export default async function OrdersPage() {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <div className="font-semibold">Commande #{o.id}</div>
-                  <div className="text-sm text-neutral-600">
-                    {o.items.length} article(s)
-
-                  </div>
+                  <div className="text-sm text-neutral-600">{o.items.length} article(s)</div>
                 </div>
 
                 <div className="text-right">
-                  <div className="font-semibold">{Number(o.grand_total_amount ?? o.total_amount).toFixed(2)} €</div>
+                  <div className="font-semibold">
+                    {Number(o.grand_total_amount ?? o.total_amount).toFixed(2)} €
+                  </div>
                   <div className="flex justify-end gap-2 mt-1">
                     <Badge>{o.status}</Badge>
                     <Badge>{o.payment_status}</Badge>
@@ -46,7 +47,9 @@ export default async function OrdersPage() {
         )}
 
         <div className="mt-4">
-          <Link className="underline" href="/products">Retour produits</Link>
+          <Link className="underline" href="/products">
+            Retour produits
+          </Link>
         </div>
       </div>
     </Section>
