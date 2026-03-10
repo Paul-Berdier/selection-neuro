@@ -1,0 +1,62 @@
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.pageTitle {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 300;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.pageSubtitle { font-size: 13px; color: var(--text-3); }
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.searchInput { max-width: 280px; }
+
+.stats {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.editQty {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.qtyInput {
+  width: 100px;
+  padding: 6px 10px !important;
+  font-size: 13px;
+}
+
+.stockValue {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.stockOut { color: var(--error) !important; }
+.stockLow { color: var(--warning) !important; }

@@ -1,40 +1,152 @@
-import Link from "next/link";
-import { apiGet } from "@/lib/api";
-import type { Product } from "@/lib/types";
-import { Section } from "@/components/Section";
-import { Card } from "@/components/Card";
-import { Badge } from "@/components/Badge";
+'use client'
 
-export const dynamic = "force-dynamic";
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { productApi } from '@/services/api'
+import type { Product } from '@/types'
+import { useCart } from '@/hooks/useCart'
+import styles from './page.module.css'
 
-export default async function ProductsPage() {
-  const data = await apiGet<{ items: Product[] }>("/products");
-  const items = data.items;
+function ProductCard({ product }: { product: Product }) {
+  const { addItem } = useCart()
+  const [adding, setAdding] = useState(false)
+  const [added, setAdded] = useState(false)
+
+  const handleAdd = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    setAdding(true)
+    try {
+      await addItem(product.id!, 1)
+      setAdded(true)
+      setTimeout(() => setAdded(false), 1800)
+    } catch {}
+    setAdding(false)
+  }
 
   return (
-    <>
-      <Section title="Produits" subtitle="Liste complète (GET /products).">
-        <div className="grid gap-6 md:grid-cols-3">
-          {items.map((p) => (
-            <Link key={p.slug} href={`/produits/${p.slug}`} className="no-underline">
-              <Card className="hover:bg-neutral-50 transition">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="font-semibold">{p.name}</div>
-                  {p.category ? <Badge>{p.category}</Badge> : null}
-                </div>
-
-                {p.short_desc ? (
-                  <p className="mt-2 text-sm text-neutral-600">{p.short_desc}</p>
-                ) : null}
-
-                <div className="mt-4 text-sm text-neutral-500">
-                  {p.price_month_eur != null ? `${p.price_month_eur}€ / mois` : "—"}
-                </div>
-              </Card>
-            </Link>
-          ))}
+    <Link href={`/products/${product.slug}`} className={styles.card}>
+      <div className={styles.cardImage}>
+        {product.image_url ? (
+          <img src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${product.image_url}`} alt={product.name} />
+        ) : (
+          <div className={styles.imagePlaceholder}>
+            <span>◆</span>
+          </div>
+        )}
+        {product.category && <span className={styles.categoryTag}>{product.category}</span>}
+      </div>
+      <div className={styles.cardBody}>
+        <h3 className={styles.cardTitle}>{product.name}</h3>
+        <p className={styles.cardDesc}>{product.short_desc}</p>
+        <div className={styles.cardFooter}>
+          <span className={styles.price}>
+            {product.price_month_eur != null
+              ? `€${product.price_month_eur.toFixed(2)}/mo`
+              : 'Price on request'}
+          </span>
+          <button
+            className={`btn btn-primary btn-sm ${styles.addBtn}`}
+            onClick={handleAdd}
+            disabled={adding || added}
+          >
+            {added ? '✓ Added' : adding ? '...' : 'Add'}
+          </button>
         </div>
-      </Section>
-    </>
-  );
+      </div>
+    </Link>
+  )
+}
+
+export default function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [filtered, setFiltered] = useState<Product[]>([])
+
+  useEffect(() => {
+    productApi.list().then((r: any) => {
+      setProducts(r.items || [])
+      setFiltered(r.items || [])
+      setLoading(false)
+    })
+  }, [])
+
+  useEffect(() => {
+    const q = search.toLowerCase()
+    setFiltered(products.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.category?.toLowerCase().includes(q) ||
+      p.short_desc?.toLowerCase().includes(q)
+    ))
+  }, [search, products])
+
+  const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean)))
+
+  return (
+    <div>
+      <div className={styles.hero}>
+        <div className="container">
+          <span className={styles.eyebrow}>Our Collection</span>
+          <h1 className="page-title">All Products</h1>
+          <p className="page-subtitle">Precision formulas for every goal</p>
+        </div>
+      </div>
+
+      <div className="container">
+        <div className={styles.toolbar}>
+          <div className={styles.searchWrap}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input
+              className={styles.searchInput}
+              placeholder="Search products..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <div className={styles.catFilters}>
+            <button
+              className={`${styles.catBtn} ${search === '' ? styles.catActive : ''}`}
+              onClick={() => setSearch('')}
+            >All</button>
+            {categories.map(c => (
+              <button
+                key={c}
+                className={`${styles.catBtn} ${search === c ? styles.catActive : ''}`}
+                onClick={() => setSearch(c!)}
+              >{c}</button>
+            ))}
+          </div>
+        </div>
+
+        {loading ? (
+          <div className={styles.grid}>
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className={styles.skeleton}>
+                <div className="skeleton" style={{ height: 220 }} />
+                <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div className="skeleton" style={{ height: 20, width: '70%' }} />
+                  <div className="skeleton" style={{ height: 14, width: '90%' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <>
+            <p className={styles.resultCount}>{filtered.length} product{filtered.length !== 1 ? 's' : ''}</p>
+            <div className={styles.grid}>
+              {filtered.map(p => <ProductCard key={p.slug} product={p} />)}
+            </div>
+            {filtered.length === 0 && (
+              <div className={styles.empty}>
+                <span>◌</span>
+                <p>No products found</p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  )
 }

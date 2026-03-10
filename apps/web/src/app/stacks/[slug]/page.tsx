@@ -1,104 +1,90 @@
-import Link from "next/link";
-import { apiGet } from "@/lib/api";
-import type { Stack } from "@/lib/types";
-import { Section } from "@/components/Section";
-import { Card } from "@/components/Card";
-import { Badge } from "@/components/Badge";
+'use client'
 
-export const dynamic = "force-dynamic";
+import { useState, useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { stackApi } from '@/services/api'
+import { useCart } from '@/hooks/useCart'
+import type { Stack } from '@/types'
+import styles from './page.module.css'
 
-function formatDosage(v?: number | null, unit?: string) {
-  if (v == null) return "—";
-  const u = unit || "";
-  return `${v}${u ? " " + u : ""}`;
-}
+export default function StackDetailPage() {
+  const { slug } = useParams<{ slug: string }>()
+  const router = useRouter()
+  const { addItem } = useCart()
+  const [stack, setStack] = useState<Stack | null>(null)
+  const [loading, setLoading] = useState(true)
 
-export default async function StackDetailPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  const s = await apiGet<Stack>(`/stacks/${slug}`);
+  useEffect(() => {
+    stackApi.get(slug).then((s: any) => { setStack(s); setLoading(false) }).catch(() => setLoading(false))
+  }, [slug])
+
+  if (loading) return (
+    <div className="container" style={{ paddingTop: 80 }}>
+      <div className={styles.skeletonHero}>
+        <div className="skeleton" style={{ height: 48, width: '60%', marginBottom: 16 }} />
+        <div className="skeleton" style={{ height: 20, width: '40%' }} />
+      </div>
+    </div>
+  )
+
+  if (!stack) return (
+    <div className="container" style={{ paddingTop: 80, textAlign: 'center' }}>
+      <p className="text-muted">Stack not found.</p>
+      <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={() => router.push('/stacks')}>Back</button>
+    </div>
+  )
 
   return (
-    <>
-      <Section title={s.name} subtitle={s.short_desc || ""}>
-        <div className="grid gap-6 md:grid-cols-3">
-          <div className="md:col-span-2">
-            <Card>
-              <p className="text-neutral-700 whitespace-pre-wrap">
-                {s.description || "Description à venir."}
-              </p>
+    <div>
+      <div className={styles.hero}>
+        <div className="container">
+          <button className={styles.back} onClick={() => router.back()}>← Stacks</button>
+          <span className={styles.eyebrow}>Stack</span>
+          <h1 className={styles.title}>{stack.title}</h1>
+          {stack.subtitle && <p className={styles.subtitle}>{stack.subtitle}</p>}
+        </div>
+      </div>
 
-              <div className="mt-8">
-                <div className="text-sm font-medium">Produits inclus</div>
-                <div className="mt-4 overflow-hidden rounded-xl border">
-                  <table className="w-full text-sm">
-                    <thead className="bg-neutral-50 text-neutral-700">
-                      <tr>
-                        <th className="px-4 py-3 text-left font-medium">Produit</th>
-                        <th className="px-4 py-3 text-left font-medium">Dose / jour</th>
-                        <th className="px-4 py-3 text-left font-medium">Note</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {s.products.map((sp) => (
-                        <tr key={sp.product_slug}>
-                          <td className="px-4 py-3">
-                            <Link
-                              className="no-underline hover:underline font-medium"
-                              href={`/produits/${sp.product_slug}`}
-                            >
-                              {sp.product_name}
-                            </Link>
-                            <div className="mt-1">
-                              {sp.product_category ? <Badge>{sp.product_category}</Badge> : null}
-                            </div>
-                            {sp.product_short_desc ? (
-                              <div className="mt-2 text-xs text-neutral-600">
-                                {sp.product_short_desc}
-                              </div>
-                            ) : null}
-                          </td>
-                          <td className="px-4 py-3">
-                            {formatDosage(sp.dosage_value, sp.dosage_unit)}
-                          </td>
-                          <td className="px-4 py-3 text-neutral-600">{sp.note || "—"}</td>
-                        </tr>
-                      ))}
-                      {s.products.length === 0 ? (
-                        <tr>
-                          <td className="px-4 py-3 text-neutral-600" colSpan={3}>
-                            Aucun produit associé (seed/import).
-                          </td>
-                        </tr>
-                      ) : null}
-                    </tbody>
-                  </table>
+      <div className="container" style={{ paddingBottom: 80 }}>
+        <div className={styles.layout}>
+          <div className={styles.products}>
+            <h2 className={styles.sectionTitle}>Products in this stack</h2>
+            {stack.products.map(sp => (
+              <div key={sp.product_slug} className={styles.productCard}>
+                <div className={styles.productInfo}>
+                  <div>
+                    {sp.product_category && <span className={styles.category}>{sp.product_category}</span>}
+                    <Link href={`/products/${sp.product_slug}`} className={styles.productName}>
+                      {sp.product_name}
+                    </Link>
+                    {sp.product_short_desc && <p className={styles.productDesc}>{sp.product_short_desc}</p>}
+                  </div>
+                  {(sp.dosage_value || sp.note) && (
+                    <div className={styles.dosage}>
+                      {sp.dosage_value && (
+                        <span className="badge badge-accent">{sp.dosage_value}{sp.dosage_unit}</span>
+                      )}
+                      {sp.note && <p className={styles.dosageNote}>{sp.note}</p>}
+                    </div>
+                  )}
                 </div>
               </div>
-            </Card>
+            ))}
           </div>
 
-          <div>
-            <Card>
-              <div className="text-sm font-medium">Navigation</div>
-              <div className="mt-3 flex flex-col gap-2 text-sm">
-                <Link className="no-underline hover:underline" href="/#stacks">
-                  ← Retour landing
-                </Link>
-                <Link className="no-underline hover:underline" href="/produits">
-                  Voir tous les produits
-                </Link>
-                <Link className="no-underline hover:underline" href="/#invite">
-                  Demander une invitation
-                </Link>
+          {stack.description && (
+            <div className={styles.sidebar}>
+              <div className="card">
+                <div className="card-header"><h3>About this Stack</h3></div>
+                <div className="card-body">
+                  <pre className={styles.descText}>{stack.description}</pre>
+                </div>
               </div>
-            </Card>
-          </div>
+            </div>
+          )}
         </div>
-      </Section>
-    </>
-  );
+      </div>
+    </div>
+  )
 }

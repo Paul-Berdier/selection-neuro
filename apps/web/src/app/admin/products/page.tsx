@@ -1,202 +1,270 @@
-"use client";
+'use client'
 
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import type { Product } from "@/lib/types";
-import { formatApiError, getErrorMessage } from "@/lib/errors";
+import { useState, useEffect, useRef } from 'react'
+import { adminProductApi } from '@/services/api'
+import styles from './page.module.css'
 
-type ApiResp = {
-  ok: boolean;
-  total?: number;
-  limit?: number;
-  offset?: number;
-  items?: Product[];
-  error?: string;
-  detail?: string;
-};
+interface AdminProduct {
+  id: number
+  slug: string
+  name: string
+  short_desc: string
+  category: string
+  description_md: string
+  price_month_eur: number | null
+  image_media_id: number | null
+  is_active: boolean
+}
 
-export default function AdminProductsPage() {
-  const [q, setQ] = useState("");
-  const [isActive, setIsActive] = useState<"" | "true" | "false">("");
-  const [limit, setLimit] = useState(50);
-  const [offset, setOffset] = useState(0);
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
-  const [items, setItems] = useState<Product[]>([]);
-  const [total, setTotal] = useState(0);
+function ProductForm({ initial, onSuccess, onCancel }: {
+  initial?: AdminProduct
+  onSuccess: () => void
+  onCancel: () => void
+}) {
+  const [name, setName] = useState(initial?.name || '')
+  const [slug, setSlug] = useState(initial?.slug || '')
+  const [shortDesc, setShortDesc] = useState(initial?.short_desc || '')
+  const [descMd, setDescMd] = useState(initial?.description_md || '')
+  const [category, setCategory] = useState(initial?.category || '')
+  const [price, setPrice] = useState(initial?.price_month_eur?.toString() || '')
+  const [isActive, setIsActive] = useState(initial?.is_active ?? true)
+  const [benefits, setBenefits] = useState('')
+  const [benefitsMode, setBenefitsMode] = useState('replace')
+  const [image, setImage] = useState<File | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
 
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
-
-  const qs = useMemo(() => {
-    const p = new URLSearchParams();
-    if (q) p.set("q", q);
-    if (isActive) p.set("is_active", isActive);
-    p.set("limit", String(limit));
-    p.set("offset", String(offset));
-    return p.toString();
-  }, [q, isActive, limit, offset]);
-
-  async function load() {
-    setLoading(true);
-    setErr("");
-    try {
-      const res = await fetch(`/api/admin/products?${qs}`, { cache: "no-store" });
-      const data: ApiResp = await res.json();
-      if (!res.ok || !data.ok) {
-        setErr(formatApiError(data));
-        setLoading(false);
-        return;
-      }
-      setItems(data.items || []);
-      setTotal(data.total || 0);
-    } catch (e: any) {
-      setErr(e?.message || "fetch failed");
-    } finally {
-      setLoading(false);
+  const handleSubmit = async () => {
+    setLoading(true)
+    setError('')
+    const fd = new FormData()
+    if (!initial) {
+      fd.append('name', name)
+      if (slug) fd.append('slug', slug)
+      fd.append('short_desc', shortDesc)
+      fd.append('description_md', descMd)
+      fd.append('category', category)
+      if (price) fd.append('price_month_eur', price)
+      fd.append('is_active', String(isActive))
+      fd.append('benefits', benefits)
+      fd.append('benefits_mode', benefitsMode)
+      if (image) fd.append('image', image)
+    } else {
+      if (name !== initial.name) fd.append('name', name)
+      if (shortDesc !== initial.short_desc) fd.append('short_desc', shortDesc)
+      if (descMd !== initial.description_md) fd.append('description_md', descMd)
+      if (category !== initial.category) fd.append('category', category)
+      if (price) fd.append('price_month_eur', price)
+      fd.append('is_active', String(isActive))
+      if (benefits) { fd.append('benefits', benefits); fd.append('benefits_mode', benefitsMode) }
+      if (image) fd.append('image', image)
     }
+
+    try {
+      if (initial) {
+        await adminProductApi.update(initial.slug, fd)
+      } else {
+        await adminProductApi.create(fd)
+      }
+      onSuccess()
+    } catch (e: any) {
+      setError(e.message || 'Failed to save product')
+    }
+    setLoading(false)
   }
 
-  useEffect(() => {
-    void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qs]);
+  return (
+    <div className={styles.form}>
+      <div className="form-grid">
+        <div className="form-group">
+          <label className="form-label">Name *</label>
+          <input className="input" value={name} onChange={e => setName(e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Slug {!initial && '(auto if empty)'}</label>
+          <input className="input" value={slug} onChange={e => setSlug(e.target.value)} disabled={!!initial} />
+        </div>
+      </div>
+      <div className="form-group">
+        <label className="form-label">Short Description</label>
+        <input className="input" value={shortDesc} onChange={e => setShortDesc(e.target.value)} />
+      </div>
+      <div className="form-grid">
+        <div className="form-group">
+          <label className="form-label">Category</label>
+          <input className="input" value={category} onChange={e => setCategory(e.target.value)} placeholder="Sleep, Focus, Recovery…" />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Price €/month</label>
+          <input className="input" type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} placeholder="29.90" />
+        </div>
+      </div>
+      <div className="form-group">
+        <label className="form-label">Description (Markdown)</label>
+        <textarea className="textarea" value={descMd} onChange={e => setDescMd(e.target.value)} rows={5} />
+      </div>
+      <div className="form-grid">
+        <div className="form-group">
+          <label className="form-label">Benefits (comma-separated)</label>
+          <input className="input" value={benefits} onChange={e => setBenefits(e.target.value)} placeholder="Improved sleep, Relaxation…" />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Benefits Mode</label>
+          <select className="select" value={benefitsMode} onChange={e => setBenefitsMode(e.target.value)}>
+            <option value="replace">Replace</option>
+            <option value="append">Append</option>
+          </select>
+        </div>
+      </div>
+      <div className="form-group">
+        <label className="form-label">Image</label>
+        <input ref={fileRef} type="file" accept="image/*" onChange={e => setImage(e.target.files?.[0] || null)} style={{ display: 'none' }} />
+        <div className={styles.imageUpload}>
+          {initial?.image_media_id && !image && (
+            <img src={`${API}/media/${initial.image_media_id}`} alt="" className={styles.imagePreview} />
+          )}
+          {image && <span className={styles.imageFilename}>{image.name}</span>}
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => fileRef.current?.click()}>
+            {image || initial?.image_media_id ? 'Change Image' : 'Upload Image'}
+          </button>
+        </div>
+      </div>
+      <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <input type="checkbox" id="isActive" checked={isActive} onChange={e => setIsActive(e.target.checked)} />
+        <label htmlFor="isActive" className="form-label" style={{ margin: 0, cursor: 'pointer' }}>Active (visible in store)</label>
+      </div>
+      {error && <p className="text-error" style={{ fontSize: 13 }}>{error}</p>}
+      <div style={{ display: 'flex', gap: 10 }}>
+        <button className="btn btn-ghost" onClick={onCancel} type="button">Cancel</button>
+        <button className="btn btn-primary" onClick={handleSubmit} disabled={loading || !name}>
+          {loading ? 'Saving…' : initial ? 'Update Product' : 'Create Product'}
+        </button>
+      </div>
+    </div>
+  )
+}
 
-  const prevOffset = Math.max(0, offset - limit);
-  const nextOffset = offset + limit;
+export default function AdminProductsPage() {
+  const [products, setProducts] = useState<AdminProduct[]>([])
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [creating, setCreating] = useState(false)
+  const [editing, setEditing] = useState<AdminProduct | null>(null)
+  const [search, setSearch] = useState('')
+  const [deleting, setDeleting] = useState<string | null>(null)
+
+  const load = () => {
+    setLoading(true)
+    adminProductApi.list({ q: search || undefined, limit: 100 }).then((r: any) => {
+      setProducts(r.items || [])
+      setTotal(r.total || 0)
+      setLoading(false)
+    })
+  }
+
+  useEffect(() => { load() }, [search])
+
+  const handleDelete = async (slug: string) => {
+    if (!confirm('Deactivate this product?')) return
+    setDeleting(slug)
+    try { await adminProductApi.softDelete(slug); load() }
+    finally { setDeleting(null) }
+  }
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-6">
-      <div className="flex items-end justify-between gap-4">
+    <div>
+      <div className={styles.pageHeader}>
         <div>
-          <h1 className="text-2xl font-bold">Admin — Produits</h1>
-          <div className="text-sm text-zinc-600">Gestion des produits (proxy sécurisé via /api/admin/*)</div>
+          <h1 className={styles.pageTitle}>Products</h1>
+          <p className={styles.pageSubtitle}>{total} products</p>
         </div>
-        <Link href="/admin/products/new" className="rounded-md bg-zinc-900 px-4 py-2 text-white font-semibold">
-          + Nouveau
-        </Link>
-      </div>
-
-      <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-4">
-        <label className="grid gap-1">
-          <span className="text-sm font-medium">Recherche</span>
-          <input
-            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2"
-            placeholder="slug ou nom"
-            value={q}
-            onChange={(e) => {
-              setOffset(0);
-              setQ(e.target.value);
-            }}
-          />
-        </label>
-
-        <label className="grid gap-1">
-          <span className="text-sm font-medium">Statut</span>
-          <select
-            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2"
-            value={isActive}
-            onChange={(e) => {
-              setOffset(0);
-              setIsActive(e.target.value as any);
-            }}
-          >
-            <option value="">Tous</option>
-            <option value="true">Actifs</option>
-            <option value="false">Inactifs</option>
-          </select>
-        </label>
-
-        <label className="grid gap-1">
-          <span className="text-sm font-medium">Limit</span>
-          <input
-            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2"
-            type="number"
-            min={1}
-            max={200}
-            value={String(limit)}
-            onChange={(e) => {
-              setOffset(0);
-              setLimit(Number(e.target.value || 50));
-            }}
-          />
-        </label>
-
-        <button
-          onClick={() => void load()}
-          className="mt-6 rounded-md border border-zinc-300 bg-white px-4 py-2 font-semibold hover:bg-zinc-50"
-        >
-          {loading ? "…" : "Rafraîchir"}
+        <button className="btn btn-primary" onClick={() => { setCreating(true); setEditing(null) }}>
+          + New Product
         </button>
       </div>
 
-      {err ? (
-        <div className="mt-4 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900">
-          <b>Erreur:</b> {err}
+      {creating && (
+        <div className="card" style={{ marginBottom: 24 }}>
+          <div className="card-header"><h3>Create Product</h3></div>
+          <div className="card-body">
+            <ProductForm onSuccess={() => { setCreating(false); load() }} onCancel={() => setCreating(false)} />
+          </div>
         </div>
-      ) : null}
+      )}
 
-      <div className="mt-4 text-sm text-zinc-600">
-        Total: <b>{total}</b> — offset {offset} — limit {limit}
+      {editing && (
+        <div className="card" style={{ marginBottom: 24 }}>
+          <div className="card-header">
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <h3>Edit: {editing.name}</h3>
+              <button className={styles.closeBtn} onClick={() => setEditing(null)}>×</button>
+            </div>
+          </div>
+          <div className="card-body">
+            <ProductForm initial={editing} onSuccess={() => { setEditing(null); load() }} onCancel={() => setEditing(null)} />
+          </div>
+        </div>
+      )}
+
+      <div className={styles.toolbar}>
+        <input
+          className={`input ${styles.searchInput}`}
+          placeholder="Search products…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
       </div>
 
-      <div className="mt-3 overflow-x-auto rounded-md border border-zinc-200 bg-white">
-        <table className="w-full border-collapse text-sm">
-          <thead className="bg-zinc-50 text-left">
+      <div className="table-wrapper">
+        <table>
+          <thead>
             <tr>
-              <th className="px-4 py-3">Nom</th>
-              <th className="px-4 py-3">Slug</th>
-              <th className="px-4 py-3">Catégorie</th>
-              <th className="px-4 py-3">Prix/mois</th>
-              <th className="px-4 py-3">Actif</th>
-              <th className="px-4 py-3">Action</th>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {items.map((p) => (
-              <tr key={p.id} className="border-t border-zinc-100">
-                <td className="px-4 py-3">
-                  <div className="font-semibold">{p.name}</div>
-                  {p.short_desc ? <div className="text-zinc-500">{p.short_desc}</div> : null}
+            {loading ? (
+              <tr><td colSpan={5} style={{ textAlign: 'center', padding: 40, color: 'var(--text-3)' }}>Loading…</td></tr>
+            ) : products.map(p => (
+              <tr key={p.id}>
+                <td>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    {p.image_media_id ? (
+                      <img src={`${API}/media/${p.image_media_id}`} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4, border: '1px solid var(--border)' }} />
+                    ) : (
+                      <div style={{ width: 40, height: 40, background: 'var(--bg-3)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-dim)', fontSize: 12, border: '1px solid var(--border)' }}>◆</div>
+                    )}
+                    <div>
+                      <p style={{ color: 'var(--text)', fontWeight: 500, fontSize: 13 }}>{p.name}</p>
+                      <p style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'monospace' }}>{p.slug}</p>
+                    </div>
+                  </div>
                 </td>
-                <td className="px-4 py-3 font-mono">{p.slug}</td>
-                <td className="px-4 py-3">{p.category || "-"}</td>
-                <td className="px-4 py-3">{p.price_month_eur ?? "-"}</td>
-                <td className="px-4 py-3">{p.is_active ? "✅" : "❌"}</td>
-                <td className="px-4 py-3">
-                  <Link className="underline" href={`/admin/products/${p.slug}`}>
-                    Éditer
-                  </Link>
+                <td>{p.category || '—'}</td>
+                <td>{p.price_month_eur != null ? `€${p.price_month_eur.toFixed(2)}/mo` : '—'}</td>
+                <td><span className={`badge ${p.is_active ? 'badge-success' : 'badge-muted'}`}>{p.is_active ? 'Active' : 'Inactive'}</span></td>
+                <td>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => { setEditing(p); setCreating(false) }}>Edit</button>
+                    {p.is_active && (
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(p.slug)} disabled={deleting === p.slug}>
+                        {deleting === p.slug ? '…' : 'Deactivate'}
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
-
-            {!items.length && !loading ? (
-              <tr>
-                <td className="px-4 py-6 text-zinc-500" colSpan={6}>
-                  Aucun produit.
-                </td>
-              </tr>
-            ) : null}
           </tbody>
         </table>
       </div>
-
-      <div className="mt-4 flex gap-2">
-        <button
-          disabled={offset === 0}
-          onClick={() => setOffset(prevOffset)}
-          className="rounded-md border border-zinc-300 bg-white px-3 py-2 disabled:opacity-50"
-        >
-          ← Précédent
-        </button>
-        <button
-          disabled={nextOffset >= total}
-          onClick={() => setOffset(nextOffset)}
-          className="rounded-md border border-zinc-300 bg-white px-3 py-2 disabled:opacity-50"
-        >
-          Suivant →
-        </button>
-      </div>
-    </main>
-  );
+    </div>
+  )
 }

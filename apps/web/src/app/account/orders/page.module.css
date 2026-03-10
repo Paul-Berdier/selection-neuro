@@ -1,0 +1,105 @@
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 24px;
+  align-items: start;
+}
+
+.orderList {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.orderRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  background: var(--bg-2);
+  border: none;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+  font-family: var(--font-body);
+  width: 100%;
+}
+
+.orderRow:last-child { border-bottom: none; }
+.orderRow:hover { background: var(--bg-3); }
+.orderRowActive { background: var(--accent-bg) !important; }
+
+.orderMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.orderId {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.orderDate {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.orderBadges {
+  display: flex;
+  gap: 6px;
+}
+
+.orderAmount {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  min-width: 80px;
+  text-align: right;
+}
+
+.orderDetail { position: sticky; top: 80px; }
+
+.detailItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.summaryTotal {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  padding-top: 4px;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 80px 0;
+  color: var(--text-3);
+}
+
+.empty p { font-size: 14px; color: var(--text-2); }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .orderDetail { position: static; }
+}
