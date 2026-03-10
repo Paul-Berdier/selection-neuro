@@ -9,7 +9,8 @@ import { CartClient } from "@/components/cart/CartClient";
 export const dynamic = "force-dynamic";
 
 export default async function CartPage() {
-  const token = cookies().get("access_token")?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get("access_token")?.value;
   if (!token) redirect("/account/login");
 
   const cart = await apiGet<CartOut>("/cart");

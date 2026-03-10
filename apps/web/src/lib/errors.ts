@@ -10,3 +10,11 @@ export function formatApiError(err: unknown): string {
     return "Unknown error";
   }
 }
+
+/**
+ * Alias "safe" souvent utilisé dans l'UI.
+ * (garde la compat avec les anciens imports)
+ */
+export function getErrorMessage(err: unknown): string {
+  return formatApiError(err);
+}

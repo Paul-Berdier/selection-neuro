@@ -23,7 +23,7 @@ export default async function StackDetailPage({
 
   return (
     <>
-      <Section title={s.title} subtitle={s.subtitle || ""}>
+      <Section title={s.name} subtitle={s.short_desc || ""}>
         <div className="grid gap-6 md:grid-cols-3">
           <div className="md:col-span-2">
             <Card>

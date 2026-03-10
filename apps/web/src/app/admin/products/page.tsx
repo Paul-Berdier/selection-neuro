@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Product, getErrorMessage } from "@/lib/types";
-import { formatApiError } from "@/lib/errors";
+import type { Product } from "@/lib/types";
+import { formatApiError, getErrorMessage } from "@/lib/errors";
 
 type ApiResp = {
   ok: boolean;
