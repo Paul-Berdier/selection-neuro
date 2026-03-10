@@ -48,3 +48,14 @@ export async function logoutAction() {
   cookies().delete("access_token");
   return { ok: true };
 }
+
+export function formatApiError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+
+  try {
+    if (typeof err === "string") return err;
+    return JSON.stringify(err);
+  } catch {
+    return "Unknown error";
+  }
+}

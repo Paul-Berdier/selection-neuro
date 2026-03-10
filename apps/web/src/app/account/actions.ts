@@ -1,4 +1,3 @@
-// apps/web/src/app/account/actions.ts
 "use server";
 
 import { cookies } from "next/headers";
@@ -39,7 +38,8 @@ export async function loginAction(formData: FormData) {
   if (!res.ok) throw new Error(await readError(res));
   const data = await res.json();
 
-  const cookieStore = await cookies(); // ✅ Next 15: cookies() is async
+  // ✅ Next 15: cookies() is async
+  const cookieStore = await cookies();
 
   cookieStore.set("access_token", data.access_token, {
     httpOnly: true,
