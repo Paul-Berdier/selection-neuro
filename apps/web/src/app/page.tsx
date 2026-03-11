@@ -111,10 +111,10 @@ export default function Home() {
         <div className="container">
           <div className={styles.featuresGrid}>
             {[
-              { icon: '⚡', title: 'Attention & vitesse', desc: 'Citicoline, L-Tyrosine, Créatine — réactivité et concentration soutenue.' },
-              { icon: '🧠', title: 'Mémoire & consolidation', desc: 'Bacopa, Magnésium L-thréonate, DHA — encodage et rappel.' },
-              { icon: '🌱', title: 'Neuroplasticité', desc: "Lion's Mane (NGF), Uridine, Ginkgo — plasticité et régénération." },
-              { icon: '🛡', title: 'Neuroprotection', desc: 'Vitamines B, Spiruline, Magnésium — protection long terme.' },
+              { title: 'Attention & vitesse', desc: 'Citicoline, L-Tyrosine, Créatine — réactivité et concentration soutenue.' },
+              { title: 'Mémoire & consolidation', desc: 'Bacopa, Magnésium L-thréonate, DHA — encodage et rappel.' },
+              { title: 'Neuroplasticité', desc: "Lion's Mane (NGF), Uridine, Ginkgo — plasticité et régénération." },
+              { title: 'Neuroprotection', desc: 'Vitamines B, Spiruline, Magnésium — protection long terme.' },
             ].map(f => (
               <div key={f.title} className={styles.feature}>
                 <span className={styles.featureIcon}>{f.icon}</span>
