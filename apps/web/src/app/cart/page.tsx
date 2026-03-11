@@ -38,7 +38,7 @@ export default function CartPage() {
             <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/>
             <path d="M16 10a4 4 0 01-8 0"/>
           </svg>
-          <h2>Your cart is empty</h2>
+          <h2>Votre panier est vide</h2>
           <p>Add some products to get started</p>
           <Link href="/products" className="btn btn-primary" style={{ marginTop: 8 }}>Browse Products</Link>
         </div>

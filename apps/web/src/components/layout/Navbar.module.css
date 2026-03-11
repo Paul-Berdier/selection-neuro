@@ -1,123 +1,75 @@
 .header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: rgba(10, 10, 10, 0.92);
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border);
-  height: 64px;
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,10,10,0.94); backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border); height: 64px;
 }
 
 .inner {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-  height: 100%;
+  display: flex; align-items: center; gap: 32px; height: 100%;
 }
 
 .logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-family: var(--font-display);
-  font-size: 1.4rem;
-  font-weight: 400;
-  letter-spacing: 0.1em;
-  color: var(--text);
-  text-transform: uppercase;
-  flex-shrink: 0;
+  display: flex; align-items: center; gap: 12px;
+  text-decoration: none; flex-shrink: 0; cursor: pointer;
 }
 
-.logoIcon {
-  color: var(--accent);
-  font-size: 0.8rem;
+.logoMark {
+  width: 28px; height: 28px;
+  border: 1px solid var(--accent); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; position: relative;
 }
 
-.nav {
-  display: flex;
-  align-items: center;
-  gap: 28px;
-  flex: 1;
+.logoMark::before {
+  content: ''; position: absolute;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 8px var(--accent);
 }
+
+.logoName {
+  display: block;
+  font-family: var(--font-display); font-size: 1.1rem;
+  font-weight: 400; letter-spacing: 0.04em; color: var(--text);
+  line-height: 1.2;
+}
+
+.logoSub {
+  display: block; font-size: 9px; font-weight: 400;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3);
+}
+
+.nav { display: flex; align-items: center; gap: 28px; flex: 1; }
 
 .nav a {
-  font-size: 13px;
-  font-weight: 400;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-2);
-  transition: color 0.15s;
+  font-size: 12px; font-weight: 400; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--text-2); transition: color 0.15s;
 }
+.nav a:hover, .nav a.active { color: var(--text); }
+.nav a.active { color: var(--accent); }
 
-.nav a:hover, .nav a.active {
-  color: var(--text);
-}
-
-.nav a.active {
-  color: var(--accent);
-}
-
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
-}
+.actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 
 .iconBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: transparent;
-  color: var(--text-2);
-  cursor: pointer;
-  border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border: none; background: transparent;
+  color: var(--text-2); cursor: pointer; border-radius: var(--radius);
   transition: color 0.15s, background 0.15s;
 }
-
-.iconBtn:hover {
-  color: var(--text);
-  background: var(--bg-3);
-}
+.iconBtn:hover { color: var(--text); background: var(--bg-3); }
 
 .cartBtn {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 36px;
-  background: var(--bg-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text);
-  transition: border-color 0.15s;
+  position: relative; display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 36px; background: var(--bg-3);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  color: var(--text); transition: border-color 0.15s;
 }
-
-.cartBtn:hover {
-  border-color: var(--accent);
-}
+.cartBtn:hover { border-color: var(--accent); }
 
 .cartBadge {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  background: var(--accent);
-  color: #0a0a0a;
-  font-size: 10px;
-  font-weight: 700;
-  min-width: 18px;
-  height: 18px;
-  border-radius: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 4px;
+  position: absolute; top: -6px; right: -6px;
+  background: var(--accent); color: #0a0a0a;
+  font-size: 10px; font-weight: 700; min-width: 18px; height: 18px;
+  border-radius: 100px; display: flex; align-items: center; justify-content: center; padding: 0 4px;
 }
 
-@media (max-width: 640px) {
-  .nav { display: none; }
-}
+@media (max-width: 640px) { .nav { display: none; } }

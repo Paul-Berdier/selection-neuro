@@ -16,22 +16,24 @@ export default function Navbar() {
     <header className={styles.header}>
       <div className={`container ${styles.inner}`}>
         <Link href="/" className={styles.logo}>
-          <span className={styles.logoIcon}>◆</span>
-          <span>Élixir</span>
+          <span className={styles.logoMark} />
+          <div>
+            <span className={styles.logoName}>Sélection Neuro</span>
+            <span className={styles.logoSub}>Blagnac</span>
+          </div>
         </Link>
 
         <nav className={styles.nav}>
-          <Link href="/products" className={pathname.startsWith('/products') ? styles.active : ''}>Products</Link>
+          <Link href="/products" className={pathname.startsWith('/products') ? styles.active : ''}>Produits</Link>
           <Link href="/stacks" className={pathname.startsWith('/stacks') ? styles.active : ''}>Stacks</Link>
         </nav>
 
         <div className={styles.actions}>
           {user ? (
             <>
-              <Link href="/account/orders" className={styles.iconBtn} title="Orders">
+              <Link href="/account/orders" className={styles.iconBtn} title="Commandes">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <rect x="2" y="3" width="20" height="18" rx="2"/>
-                  <path d="M8 10h8M8 14h5"/>
+                  <rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 10h8M8 14h5"/>
                 </svg>
               </Link>
               {user.is_admin && (
@@ -41,14 +43,14 @@ export default function Navbar() {
                   </svg>
                 </Link>
               )}
-              <button onClick={logout} className={styles.iconBtn} title="Logout">
+              <button onClick={logout} className={styles.iconBtn} title="Déconnexion">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/>
                 </svg>
               </button>
             </>
           ) : (
-            <Link href="/login" className="btn btn-secondary btn-sm">Sign In</Link>
+            <Link href="/login" className="btn btn-secondary btn-sm">Connexion</Link>
           )}
 
           <Link href="/cart" className={styles.cartBtn}>

@@ -100,7 +100,7 @@ export default function ProductsPage() {
             </svg>
             <input
               className={styles.searchInput}
-              placeholder="Search products..."
+              placeholder="Rechercher un produit..."
               value={search}
               onChange={e => setSearch(e.target.value)}
             />

@@ -64,7 +64,7 @@ export default function LoginPage() {
             onClick={handleSubmit}
             disabled={loading || !email || !password}
           >
-            {loading ? 'Signing in…' : 'Sign In'}
+            {loading ? 'Signing in…' : 'Connexion'}
           </button>
         </div>
 
