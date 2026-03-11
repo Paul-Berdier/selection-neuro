@@ -5,24 +5,29 @@ Remplit toutes les tables de la DB Postgres Railway à partir des données
 réelles du Notion (produits, études, bienfaits, stacks).
 
 Usage :
-    DATABASE_URL=postgresql://user:pass@host:5432/dbname python seed_database.py
+    DATABASE_URL=postgresql+psycopg://user:pass@host:5432/dbname python seed_database.py
 
     # Ou avec argument :
-    python seed_database.py --db postgresql://user:pass@host:5432/dbname
+    python seed_database.py --db postgresql+psycopg://user:pass@host:5432/dbname
 
     # Pour reset complet avant seed :
     python seed_database.py --reset
 
+Compatible aussi avec :
+    - postgres://...
+    - postgresql://...
+    - postgresql+psycopg://...
+
 Requirements :
-    pip install sqlalchemy psycopg2-binary
+    pip install sqlalchemy psycopg[binary]
 """
 
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from decimal import Decimal
-from typing import Optional
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
@@ -32,19 +37,44 @@ from sqlalchemy.orm import Session
 # CLI
 # ──────────────────────────────────────────────
 
-def get_db_url() -> str:
+def normalize_database_url(url: str) -> str:
+    """
+    Normalise l'URL PostgreSQL pour forcer l'utilisation de psycopg v3.
+
+    Cas gérés :
+    - postgres://...                -> postgresql+psycopg://...
+    - postgresql://...              -> postgresql+psycopg://...
+    - postgresql+psycopg://...      -> inchangé
+    """
+    if not url:
+        raise ValueError("DATABASE_URL est vide ou absente.")
+
+    if url.startswith("postgres://"):
+        return "postgresql+psycopg://" + url[len("postgres://"):]
+
+    if url.startswith("postgresql://"):
+        return "postgresql+psycopg://" + url[len("postgresql://"):]
+
+    return url
+
+
+def get_db_url():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--db", help="postgresql://… URL")
+    parser.add_argument("--db", help="postgresql+psycopg://… URL")
     parser.add_argument("--reset", action="store_true", help="Vide toutes les tables avant seed")
     args = parser.parse_args()
-    import os
+
     url = args.db or os.environ.get("DATABASE_URL")
     if not url:
-        print("❌  Fournir DATABASE_URL env var ou --db postgresql://…")
+        print("❌ Fournir DATABASE_URL env var ou --db postgresql+psycopg://…")
         sys.exit(1)
-    # Normalize heroku-style postgres:// → postgresql://
-    if url.startswith("postgres://"):
-        url = "postgresql" + url[8:]
+
+    try:
+        url = normalize_database_url(url)
+    except Exception as e:
+        print(f"❌ URL de base invalide : {e}")
+        sys.exit(1)
+
     return url, args.reset
 
 
@@ -636,6 +666,7 @@ Conçu pour **préserver les fonctions cognitives et la stabilité neuronale** d
 def exec(session: Session, sql: str, **params):
     return session.execute(text(sql), params)
 
+
 def fetchone(session: Session, sql: str, **params):
     row = session.execute(text(sql), params).fetchone()
     return row[0] if row else None
@@ -646,7 +677,7 @@ def fetchone(session: Session, sql: str, **params):
 # ──────────────────────────────────────────────
 
 def reset_tables(session: Session):
-    print("🗑️  Reset des tables (truncate cascade)…")
+    print("🗑️ Reset des tables (truncate cascade)…")
     tables = [
         "product_study", "product_benefit", "stack_product",
         "study", "benefit", "stack", "product",
@@ -656,7 +687,7 @@ def reset_tables(session: Session):
         try:
             session.execute(text(f"TRUNCATE TABLE {t} RESTART IDENTITY CASCADE"))
         except Exception as e:
-            print(f"   ⚠️  {t}: {e}")
+            print(f"   ⚠️ {t}: {e}")
             session.rollback()
     session.commit()
     print("   ✅ Tables vidées")
@@ -669,7 +700,7 @@ def seed_benefits(session: Session) -> dict[str, int]:
         existing = fetchone(session, "SELECT id FROM benefit WHERE slug = :slug", slug=b["slug"])
         if existing:
             slug_to_id[b["slug"]] = existing
-            print(f"   ↩  {b['name']} (déjà présent)")
+            print(f"   ↩ {b['name']} (déjà présent)")
             continue
         row = session.execute(
             text("""
@@ -692,7 +723,7 @@ def seed_products(session: Session, benefit_ids: dict[str, int]) -> dict[str, in
         existing = fetchone(session, "SELECT id FROM product WHERE slug = :slug", slug=p["slug"])
         if existing:
             slug_to_id[p["slug"]] = existing
-            print(f"   ↩  {p['name']} (déjà présent)")
+            print(f"   ↩ {p['name']} (déjà présent)")
         else:
             row = session.execute(
                 text("""
@@ -703,8 +734,10 @@ def seed_products(session: Session, benefit_ids: dict[str, int]) -> dict[str, in
                     RETURNING id
                 """),
                 {
-                    "slug": p["slug"], "name": p["name"],
-                    "short_desc": p["short_desc"], "desc_md": p["description_md"],
+                    "slug": p["slug"],
+                    "name": p["name"],
+                    "short_desc": p["short_desc"],
+                    "desc_md": p["description_md"],
                     "category": p["category"],
                     "price": p.get("price_month_eur"),
                     "stock": p.get("stock_qty"),
@@ -715,18 +748,20 @@ def seed_products(session: Session, benefit_ids: dict[str, int]) -> dict[str, in
 
         prod_id = slug_to_id[p["slug"]]
 
-        # product_benefit associations
         for b_slug in p.get("benefits", []):
             b_id = benefit_ids.get(b_slug)
             if not b_id:
                 continue
-            existing_pb = fetchone(session,
+            existing_pb = fetchone(
+                session,
                 "SELECT id FROM product_benefit WHERE product_id=:pid AND benefit_id=:bid",
-                pid=prod_id, bid=b_id)
+                pid=prod_id,
+                bid=b_id,
+            )
             if not existing_pb:
                 session.execute(
                     text("INSERT INTO product_benefit (product_id, benefit_id, evidence_level) VALUES (:pid, :bid, 3)"),
-                    {"pid": prod_id, "bid": b_id}
+                    {"pid": prod_id, "bid": b_id},
                 )
 
     session.commit()
@@ -739,7 +774,7 @@ def seed_studies(session: Session, product_ids: dict[str, int]):
         existing = fetchone(session, "SELECT id FROM study WHERE slug = :slug", slug=s["slug"])
         if existing:
             study_id = existing
-            print(f"   ↩  {s['title'][:60]}… (déjà présent)")
+            print(f"   ↩ {s['title'][:60]}… (déjà présent)")
         else:
             row = session.execute(
                 text("""
@@ -748,9 +783,13 @@ def seed_studies(session: Session, product_ids: dict[str, int]):
                     RETURNING id
                 """),
                 {
-                    "slug": s["slug"], "title": s["title"], "url": s.get("url", ""),
-                    "year": s.get("year"), "journal": s.get("journal", ""),
-                    "source_type": s.get("source_type", ""), "summary": s["summary"],
+                    "slug": s["slug"],
+                    "title": s["title"],
+                    "url": s.get("url", ""),
+                    "year": s.get("year"),
+                    "journal": s.get("journal", ""),
+                    "source_type": s.get("source_type", ""),
+                    "summary": s["summary"],
                 }
             ).fetchone()
             study_id = row[0]
@@ -760,25 +799,28 @@ def seed_studies(session: Session, product_ids: dict[str, int]):
             p_id = product_ids.get(p_slug)
             if not p_id:
                 continue
-            existing_ps = fetchone(session,
+            existing_ps = fetchone(
+                session,
                 "SELECT id FROM product_study WHERE product_id=:pid AND study_id=:sid",
-                pid=p_id, sid=study_id)
+                pid=p_id,
+                sid=study_id,
+            )
             if not existing_ps:
                 session.execute(
                     text("INSERT INTO product_study (product_id, study_id) VALUES (:pid, :sid)"),
-                    {"pid": p_id, "sid": study_id}
+                    {"pid": p_id, "sid": study_id},
                 )
 
     session.commit()
 
 
 def seed_stacks(session: Session, product_ids: dict[str, int]):
-    print("\n🏗️  Seed stacks…")
+    print("\n🏗️ Seed stacks…")
     for s in STACKS:
         existing = fetchone(session, "SELECT id FROM stack WHERE slug = :slug", slug=s["slug"])
         if existing:
             stack_id = existing
-            print(f"   ↩  {s['title']} (déjà présent)")
+            print(f"   ↩ {s['title']} (déjà présent)")
         else:
             row = session.execute(
                 text("""
@@ -787,8 +829,10 @@ def seed_stacks(session: Session, product_ids: dict[str, int]):
                     RETURNING id
                 """),
                 {
-                    "slug": s["slug"], "title": s["title"],
-                    "subtitle": s.get("subtitle", ""), "desc_md": s.get("description_md", ""),
+                    "slug": s["slug"],
+                    "title": s["title"],
+                    "subtitle": s.get("subtitle", ""),
+                    "desc_md": s.get("description_md", ""),
                 }
             ).fetchone()
             stack_id = row[0]
@@ -797,11 +841,14 @@ def seed_stacks(session: Session, product_ids: dict[str, int]):
         for sp in s.get("products", []):
             p_id = product_ids.get(sp["slug"])
             if not p_id:
-                print(f"      ⚠️  Produit inconnu : {sp['slug']}")
+                print(f"      ⚠️ Produit inconnu : {sp['slug']}")
                 continue
-            existing_sp = fetchone(session,
+            existing_sp = fetchone(
+                session,
                 "SELECT id FROM stack_product WHERE stack_id=:sid AND product_id=:pid",
-                sid=stack_id, pid=p_id)
+                sid=stack_id,
+                pid=p_id,
+            )
             if not existing_sp:
                 session.execute(
                     text("""
@@ -810,12 +857,15 @@ def seed_stacks(session: Session, product_ids: dict[str, int]):
                         VALUES (:sid, :pid, :dv, :du, :note, :so)
                     """),
                     {
-                        "sid": stack_id, "pid": p_id,
-                        "dv": sp.get("dosage_value"), "du": sp.get("dosage_unit", ""),
-                        "note": sp.get("note", ""), "so": sp.get("sort_order", 100),
+                        "sid": stack_id,
+                        "pid": p_id,
+                        "dv": sp.get("dosage_value"),
+                        "du": sp.get("dosage_unit", ""),
+                        "note": sp.get("note", ""),
+                        "so": sp.get("sort_order", 100),
                     }
                 )
-                print(f"      → {sp['slug']} {sp.get('dosage_value','')} {sp.get('dosage_unit','')}")
+                print(f"      → {sp['slug']} {sp.get('dosage_value', '')} {sp.get('dosage_unit', '')}")
 
     session.commit()
 
@@ -827,11 +877,11 @@ def seed_stacks(session: Session, product_ids: dict[str, int]):
 def main():
     db_url, do_reset = get_db_url()
 
-    print(f"\n🔗 Connexion à la base…")
+    print("\n🔗 Connexion à la base…")
+    print(f"   Driver SQLAlchemy : {db_url.split('://', 1)[0]}")
     engine = create_engine(db_url, echo=False)
 
     with Session(engine) as session:
-        # Sanity check
         try:
             session.execute(text("SELECT 1"))
             print("   ✅ Connexion OK")
@@ -842,8 +892,8 @@ def main():
         if do_reset:
             reset_tables(session)
 
-        benefit_ids  = seed_benefits(session)
-        product_ids  = seed_products(session, benefit_ids)
+        benefit_ids = seed_benefits(session)
+        product_ids = seed_products(session, benefit_ids)
         seed_studies(session, product_ids)
         seed_stacks(session, product_ids)
 
