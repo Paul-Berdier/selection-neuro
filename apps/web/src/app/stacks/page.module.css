@@ -2,6 +2,7 @@
   padding: 56px 0 40px;
   border-bottom: 1px solid var(--border);
   margin-bottom: 48px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
 }
 
 .eyebrow {
@@ -14,11 +15,11 @@
   display: grid;
   grid-template-columns: 2fr 1fr;
   grid-template-rows: auto auto;
-  gap: 1px;
-  background: var(--border);
-  border: 1px solid var(--border);
+  gap: 18px;
+  background: transparent;
+  border: none;
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow: visible;
   margin-bottom: 60px;
 }
 
@@ -26,7 +27,7 @@
 .card:first-child {
   grid-column: 1 / 2;
   grid-row: 1 / 3;
-  background: linear-gradient(160deg, var(--bg-2), #0f0f0d);
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)), rgba(10, 22, 43, 0.72);
   border-right: none;
 }
 
@@ -36,13 +37,14 @@
 }
 
 .card {
-  background: var(--bg-2); padding: 36px 32px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)), rgba(9, 18, 37, 0.62); padding: 36px 32px;
+  border: 1px solid rgba(156,204,255,0.14); border-radius: 30px; backdrop-filter: blur(18px);
   display: flex; flex-direction: column; gap: 12px;
-  text-decoration: none; transition: background 0.2s; cursor: pointer;
+  text-decoration: none; transition: background 0.2s, border-color 0.2s, transform 0.2s; cursor: pointer;
   min-height: 240px;
 }
-.card:hover { background: var(--bg-3); }
-.card:first-child:hover { background: linear-gradient(160deg, #161614, #111); }
+.card:hover { background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03)), rgba(11, 22, 44, 0.7); border-color: rgba(255,213,74,0.18); transform: translateY(-2px); }
+.card:first-child:hover { background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03)), rgba(11, 22, 44, 0.76); }
 
 .cardTop {
   display: flex; justify-content: space-between; align-items: flex-start;
@@ -52,12 +54,12 @@
   font-family: var(--font-display); font-size: 3.5rem; font-weight: 300;
   color: var(--border-light); line-height: 1; letter-spacing: -0.02em;
 }
-.card:first-child .cardNumber { font-size: 5rem; color: rgba(201,169,110,0.12); }
+.card:first-child .cardNumber { font-size: 5rem; color: rgba(255,213,74,0.20); }
 
 .productCount {
   font-size: 10px; color: var(--text-3); letter-spacing: 0.08em;
   text-transform: uppercase; font-weight: 500;
-  background: var(--bg-4); border: 1px solid var(--border);
+  background: rgba(9, 18, 37, 0.72); border: 1px solid rgba(108,169,255,0.14);
   padding: 4px 10px; border-radius: 100px;
   align-self: flex-start;
 }
@@ -66,7 +68,7 @@
   font-family: var(--font-display); font-size: 1.5rem; font-weight: 400;
   color: var(--text); line-height: 1.2;
 }
-.card:first-child .stackTitle { font-size: 2rem; color: var(--accent); }
+.card:first-child .stackTitle { font-size: 2rem; color: var(--text); }
 
 .stackSubtitle { font-size: 13px; color: var(--text-2); font-weight: 300; line-height: 1.55; flex: 1; }
 
@@ -74,11 +76,11 @@
 
 .pill {
   font-size: 11px; padding: 4px 12px;
-  background: var(--bg-4); border: 1px solid var(--border-light);
+  background: rgba(9, 18, 37, 0.72); border: 1px solid rgba(108,169,255,0.14);
   border-radius: 100px; color: var(--text-2); white-space: nowrap;
 }
 .card:first-child .pill {
-  background: var(--accent-bg); border-color: rgba(201,169,110,0.2); color: var(--accent);
+  background: rgba(63,137,255,0.14); border-color: rgba(156,204,255,0.22); color: #d7e8ff;
 }
 
 .pillMore { font-size: 11px; color: var(--text-3); padding: 4px 4px; }

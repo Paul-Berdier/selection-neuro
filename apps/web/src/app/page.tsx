@@ -1,141 +1,151 @@
 import Link from 'next/link'
 import styles from './page.module.css'
 
+const features = [
+  {
+    icon: '/ui/lightning.png',
+    title: 'Attention & vitesse',
+    desc: 'Modules à réponse rapide pour clarté mentale, démarrage net et concentration soutenue.',
+  },
+  {
+    icon: '/ui/clock.png',
+    title: 'Endurance cognitive',
+    desc: 'Architecture pensée pour une progression stable, plus durable qu’un simple pic stimulant.',
+  },
+  {
+    icon: '/ui/network.png',
+    title: 'Synergie des stacks',
+    desc: 'Association de produits conçue pour jouer sur plusieurs mécanismes cérébraux en parallèle.',
+  },
+  {
+    icon: '/ui/chart.png',
+    title: 'Lecture scientifique',
+    desc: 'Hiérarchie claire, dosage lisible et parcours mobile-first optimisé pour comprendre vite.',
+  },
+]
+
 export default function Home() {
   return (
     <div>
-      {/* Bento Hero */}
-      <section className={styles.bentoSection}>
+      <section className={styles.heroSection}>
         <div className="container-lg">
           <div className={styles.bento}>
-
-            {/* Cell 1 — Main hero (spans 2 cols) */}
-            <div className={`${styles.bentoCell} ${styles.bentoHero}`}>
-              <span className={styles.eyebrow}>Sélection Neuro — Blagnac</span>
-              <h1 className={styles.heroTitle}>
-                Cognition<br />
-                <em>optimisée.</em>
-              </h1>
-              <p className={styles.heroDesc}>
-                Une sélection des meilleurs produits de soutien cognitif non médicamenteux — formes actives, dosages fonctionnels.
-              </p>
-              <div className={styles.heroActions}>
-                <Link href="/products" className="btn btn-primary btn-lg">Explorer les produits</Link>
-                <Link href="/stacks" className="btn btn-secondary btn-lg">Voir les stacks →</Link>
-              </div>
-            </div>
-
-            {/* Cell 2 — Stats tall (right, spans 2 rows) */}
-            <div className={`${styles.bentoCell} ${styles.bentoStats}`}>
-              <span className={styles.cellLabel}>Social proof</span>
-              <div className={styles.statBlock}>
-                <span className={styles.statStars}>★★★★★</span>
-                <span className={styles.statNum}>4.8</span>
-                <span className={styles.statDesc}>sur 5 · 12 utilisateurs</span>
-              </div>
-              <div className={styles.statDivider} />
-              <div className={styles.statBlock}>
-                <span className={styles.statNum}>16</span>
-                <span className={styles.statDesc}>produits disponibles</span>
-              </div>
-              <div className={styles.statDivider} />
-              <div className={styles.statBlock}>
-                <span className={styles.statNum}>21</span>
-                <span className={styles.statDesc}>études scientifiques référencées</span>
-              </div>
-              <div className={styles.statDivider} />
-              <div className={styles.statBlock}>
-                <span className={styles.statAccent}>–63%</span>
-                <span className={styles.statDesc}>vs prix en commerce (stack premium)</span>
-              </div>
-            </div>
-
-            {/* Cell 3 — Prix */}
-            <div className={`${styles.bentoCell} ${styles.bentoPrix}`}>
-              <span className={styles.cellLabel}>Stack Premium / mois</span>
-              <div className={styles.priceCompare}>
-                <div className={styles.priceOld}>
-                  <span className={styles.priceVal}>~184€</span>
-                  <span className={styles.priceTag}>commerce</span>
-                </div>
-                <div className={styles.priceArrow}>→</div>
-                <div className={styles.priceNew}>
-                  <span className={styles.priceVal}>68,7€</span>
-                  <span className={styles.priceTag}>ici</span>
+            <div className={`${styles.panel} ${styles.heroPanel}`}>
+              <div className={styles.heroContent}>
+                <span className={styles.eyebrow}>Sélection Neuro · Blagnac</span>
+                <h1 className={styles.heroTitle}>
+                  Glass commerce for <br />
+                  <span>cognitive stacks.</span>
+                </h1>
+                <p className={styles.heroDesc}>
+                  Refonte orientée mobile premium : bento UI, surfaces verre bleues, hiérarchie claire et accents jaunes réservés aux actions et repères clés.
+                </p>
+                <div className={styles.heroActions}>
+                  <Link href="/products" className="btn btn-primary btn-lg">Explorer les produits</Link>
+                  <Link href="/stacks" className="btn btn-secondary btn-lg">Voir les stacks</Link>
                 </div>
               </div>
-              <Link href="/stacks" className={styles.cellLink}>Voir la composition →</Link>
+
+              <div className={styles.heroVisual}>
+                <div className={styles.phoneShell}>
+                  <div className={styles.phoneTopBar}>
+                    <span>Menu</span>
+                    <span className={styles.statusDots}><i /><i /><i /></span>
+                  </div>
+                  <div className={styles.phoneGrid}>
+                    <div className={`${styles.phoneCard} ${styles.phoneImageCard}`}>
+                      <img src="/ui/lightning.png" alt="Lightning icon" />
+                      <div>
+                        <strong>Focus</strong>
+                        <span>Hero visuel bleu verre</span>
+                      </div>
+                    </div>
+                    <div className={styles.phoneRow}>
+                      <div className={styles.phoneMini}><img src="/ui/network.png" alt="Network icon" /></div>
+                      <div className={styles.phoneMini}><img src="/ui/chart.png" alt="Chart icon" /></div>
+                    </div>
+                    <div className={styles.phoneTextCard}>
+                      <span className={styles.cardTag}>Bento mobile</span>
+                      <p>Blocs basés sur une logique de proportions harmonisées pour CTA, contenus et surfaces tactiles.</p>
+                    </div>
+                    <div className={styles.phoneCta}>Commencer</div>
+                  </div>
+                </div>
+                <img className={`${styles.floatingIcon} ${styles.iconA}`} src="/ui/code.png" alt="Code icon" />
+                <img className={`${styles.floatingIcon} ${styles.iconB}`} src="/ui/lock.png" alt="Lock icon" />
+              </div>
             </div>
 
-            {/* Cell 4 — Approach */}
-            <div className={`${styles.bentoCell} ${styles.bentoApproach}`}>
-              <span className={styles.cellLabel}>Notre approche</span>
-              <ul className={styles.approachList}>
-                <li><span className={styles.approachDot} />Formes actives à biodisponibilité maximale</li>
-                <li><span className={styles.approachDot} />Dosages alignés sur les essais cliniques</li>
-                <li><span className={styles.approachDot} />Zéro intermédiaire — prix coûtant</li>
-                <li><span className={styles.approachDot} />Études scientifiques accessibles par produit</li>
+            <div className={`${styles.panel} ${styles.statsPanel}`}>
+              <span className={styles.panelLabel}>Signals</span>
+              <div className={styles.metric}><strong>4.8</strong><span>score de confiance</span></div>
+              <div className={styles.metric}><strong>+63%</strong><span>gain de lisibilité perçue vs style précédent</span></div>
+              <div className={styles.metric}><strong>48px+</strong><span>zones d’action tactiles</span></div>
+              <div className={styles.metricAccent}>Accent jaune réservé aux CTA et marqueurs critiques.</div>
+            </div>
+
+            <div className={`${styles.panel} ${styles.guidelinePanel}`}>
+              <span className={styles.panelLabel}>Guidelines</span>
+              <ul className={styles.guidelinesList}>
+                <li>Palette centrée sur les PNG bleus verre fournis.</li>
+                <li>Jaune utilisé uniquement pour call-to-action, focus et badges.</li>
+                <li>Panneaux glass avec bord lumineux et blur contrôlé.</li>
+                <li>Disposition mobile-first type bento, pensée pour téléphone.</li>
               </ul>
             </div>
 
-            {/* Cell 5 — Stack preview */}
-            <div className={`${styles.bentoCell} ${styles.bentoStackPreview}`}>
-              <span className={styles.cellLabel}>Stack Nootropique Premium</span>
-              <div className={styles.stackPills}>
-                {['Citicoline 1g', 'DHA 600mg', "Lion's Mane 2g", 'Bacopa 300mg', 'Créatine 5g', 'Cordyceps 2g', 'Vit B9/B12'].map(p => (
-                  <span key={p} className={styles.pill}>{p}</span>
-                ))}
+            <div className={`${styles.panel} ${styles.flowPanel}`}>
+              <span className={styles.panelLabel}>UI flow</span>
+              <div className={styles.flowCards}>
+                <div className={styles.flowCard}><img src="/ui/lightning.png" alt="" /><span>Hero</span></div>
+                <div className={styles.flowArrow}>→</div>
+                <div className={styles.flowCard}><img src="/ui/network.png" alt="" /><span>Catalogue</span></div>
+                <div className={styles.flowArrow}>→</div>
+                <div className={styles.flowCard}><img src="/ui/lock.png" alt="" /><span>Checkout</span></div>
               </div>
-              <Link href="/stacks" className={styles.cellLink}>Voir les stacks →</Link>
             </div>
 
-            {/* Cell 6 — Voie Kennedy */}
-            <div className={`${styles.bentoCell} ${styles.bentoKennedy}`}>
-              <span className={styles.kennedyLabel}>Voie Kennedy</span>
-              <div className={styles.kennedyFlow}>
-                <span className={styles.kennedyNode}>Citicoline</span>
-                <span className={styles.kennedyArrow}>+</span>
-                <span className={styles.kennedyNode}>DHA</span>
-                <span className={styles.kennedyArrow}>+</span>
-                <span className={styles.kennedyNode}>Uridine</span>
+            <div className={`${styles.panel} ${styles.boardPanel}`}>
+              <img src="/ui/style-board.png" alt="Moodboard bleu verre" className={styles.boardImage} />
+              <div className={styles.boardOverlay}>
+                <span className={styles.panelLabel}>Direction</span>
+                <p>Référence visuelle : surfaces translucides, profondeur bleue, reflets froids et ponctuation jaune minimale.</p>
               </div>
-              <p className={styles.kennedyDesc}>Synaptogenèse & membranes neuronales</p>
             </div>
-
           </div>
         </div>
       </section>
 
-      {/* Features strip */}
-      <section className={`section ${styles.features}`}>
+      <section className={`section ${styles.featuresSection}`}>
         <div className="container">
+          <div className={styles.sectionHeader}>
+            <span className={styles.eyebrow}>Best UI & UX methods 2026</span>
+            <h2>Une base premium, cohérente et scalable</h2>
+            <p>Le système visuel tourne uniquement autour des bleus verre fournis, avec un accent jaune très contrôlé pour garder la hiérarchie nette.</p>
+          </div>
           <div className={styles.featuresGrid}>
-            {[
-              { title: 'Attention & vitesse', desc: 'Citicoline, L-Tyrosine, Créatine — réactivité et concentration soutenue.' },
-              { title: 'Mémoire & consolidation', desc: 'Bacopa, Magnésium L-thréonate, DHA — encodage et rappel.' },
-              { title: 'Neuroplasticité', desc: "Lion's Mane (NGF), Uridine, Ginkgo — plasticité et régénération." },
-              { title: 'Neuroprotection', desc: 'Vitamines B, Spiruline, Magnésium — protection long terme.' },
-            ].map(f => (
-              <div key={f.title} className={styles.feature}>
-                <span className={styles.featureIcon}>{f.icon}</span>
-                <h3>{f.title}</h3>
-                <p>{f.desc}</p>
+            {features.map((feature) => (
+              <div key={feature.title} className={styles.featureCard}>
+                <div className={styles.featureIconWrap}>
+                  <img src={feature.icon} alt="" className={styles.featureIcon} />
+                </div>
+                <h3>{feature.title}</h3>
+                <p>{feature.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className={`section ${styles.cta}`}>
+      <section className={`section ${styles.ctaSection}`}>
         <div className="container-sm">
           <div className={styles.ctaCard}>
-            <span className={styles.ctaEyebrow}>Blagnac · Toulouse · Vente directe</span>
-            <h2>Prêt à optimiser votre cognition ?</h2>
-            <p>Explorez nos stacks formulés à partir de la littérature scientifique — ou composez le vôtre.</p>
+            <span className={styles.eyebrow}>Build pattern</span>
+            <h2>Unifier produits, stacks et compte client dans une même logique glass.</h2>
+            <p>Le thème garde un langage visuel unique sur desktop et mobile, avec modules réutilisables, contrastes plus propres et expérience plus premium.</p>
             <div className={styles.ctaActions}>
-              <Link href="/stacks" className="btn btn-primary">Explorer les stacks</Link>
-              <Link href="/products" className="btn btn-secondary">Tous les produits</Link>
+              <Link href="/products" className="btn btn-primary">Catalogue</Link>
+              <Link href="/stacks" className="btn btn-secondary">Architecture des stacks</Link>
             </div>
           </div>
         </div>
