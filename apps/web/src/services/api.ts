@@ -1,11 +1,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// API client — uses /api proxy (rewrites in next.config.js) so the browser
-// ALWAYS calls the same origin (HTTPS). No mixed-content errors.
+// API client — utilise le proxy /api/* (next.config.js rewrites)
+// Le browser appelle toujours le même domaine HTTPS → zéro mixed-content.
 //
-// Railway setup:
-//   • Set  API_URL  (server-side, NOT NEXT_PUBLIC) = internal URL of your
-//     FastAPI service, e.g.  http://selection-neuro.railway.internal:8080
-//   • Do NOT set NEXT_PUBLIC_API_URL anymore.
+// Railway : définir  API_URL  (server-side, PAS NEXT_PUBLIC_)
+//   ex: http://selection-neuro.railway.internal:8080
 // ─────────────────────────────────────────────────────────────────────────────
 
 const BASE = '/api'
@@ -15,6 +13,7 @@ function getToken(): string | null {
   return localStorage.getItem('access_token')
 }
 
+// ── Requête générique ─────────────────────────────────────────────────────────
 async function request<T>(
   path: string,
   options: RequestInit = {},
@@ -37,46 +36,45 @@ async function request<T>(
   return res.json()
 }
 
+// Requête FormData (multipart) — sans Content-Type (laissé au browser)
+async function requestForm<T>(
+  path: string,
+  method: 'POST' | 'PUT' | 'PATCH',
+  body: FormData,
+): Promise<T> {
+  const token = getToken()
+  const headers: Record<string, string> = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch(`${BASE}${path}`, { method, headers, body })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Requête échouée' }))
+    throw new Error(err.detail || 'Requête échouée')
+  }
+  return res.json()
+}
+
+// Construit un query-string en ignorant les valeurs null/undefined
+function qs(params: Record<string, string | number | boolean | null | undefined>): string {
+  const entries = Object.entries(params)
+    .filter(([, v]) => v != null)
+    .map(([k, v]) => [k, String(v)])
+  return entries.length ? '?' + new URLSearchParams(entries).toString() : ''
+}
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 export const authApi = {
   login: (email: string, password: string) =>
-    request('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    }),
+    request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
   register: (email: string, password: string, full_name?: string) =>
-    request('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({ email, password, full_name }),
-    }),
+    request('/auth/register', { method: 'POST', body: JSON.stringify({ email, password, full_name }) }),
   me: () => request('/auth/me', {}, true),
 }
 
-// ── Products ──────────────────────────────────────────────────────────────────
+// ── Products (public) ─────────────────────────────────────────────────────────
 export const productApi = {
-  list: (params?: Record<string, string | number>) => {
-    const q = params ? '?' + new URLSearchParams(Object.fromEntries(Object.entries(params).map(([k,v]) => [k, String(v)]))).toString() : ''
-    return request(`/products${q}`)
-  },
+  list: (params?: Record<string, string | number | null | undefined>) =>
+    request(`/products${qs(params || {})}`),
   get: (slug: string) => request(`/products/${slug}`),
-  create: (data: unknown) =>
-    request('/products', { method: 'POST', body: JSON.stringify(data) }, true),
-  update: (id: number, data: unknown) =>
-    request(`/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }, true),
-  delete: (id: number) =>
-    request(`/products/${id}`, { method: 'DELETE' }, true),
-  uploadImage: async (productId: number, file: File) => {
-    const fd = new FormData()
-    fd.append('file', file)
-    const token = getToken()
-    const res = await fetch(`${BASE}/products/${productId}/image`, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: fd,
-    })
-    if (!res.ok) throw new Error('Upload échoué')
-    return res.json()
-  },
 }
 
 // ── Stacks ────────────────────────────────────────────────────────────────────
@@ -89,15 +87,9 @@ export const stackApi = {
 export const cartApi = {
   get: () => request('/cart', {}, true),
   addItem: (product_id: number, quantity: number) =>
-    request('/cart/items', {
-      method: 'POST',
-      body: JSON.stringify({ product_id, quantity }),
-    }, true),
+    request('/cart/items', { method: 'POST', body: JSON.stringify({ product_id, quantity }) }, true),
   updateItem: (itemId: number, quantity: number) =>
-    request(`/cart/items/${itemId}`, {
-      method: 'PUT',
-      body: JSON.stringify({ quantity }),
-    }, true),
+    request(`/cart/items/${itemId}`, { method: 'PUT', body: JSON.stringify({ quantity }) }, true),
   removeItem: (itemId: number) =>
     request(`/cart/items/${itemId}`, { method: 'DELETE' }, true),
 }
@@ -108,19 +100,9 @@ export const orderApi = {
   list: () => request('/orders', {}, true),
   get: (id: number) => request(`/orders/${id}`, {}, true),
   updateStatus: (id: number, status: string) =>
-    request(`/orders/${id}/status`, {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
-    }, true),
+    request(`/orders/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }, true),
   updatePayment: (id: number, status: string) =>
-    request(`/orders/${id}/payment`, {
-      method: 'PUT',
-      body: JSON.stringify({ payment_status: status }),
-    }, true),
-  adminList: (params?: Record<string, string | number>) => {
-    const q = params ? '?' + new URLSearchParams(Object.fromEntries(Object.entries(params).map(([k,v]) => [k, String(v)]))).toString() : ''
-    return request(`/admin/orders${q}`, {}, true)
-  },
+    request(`/orders/${id}/payment`, { method: 'PUT', body: JSON.stringify({ payment_status: status }) }, true),
 }
 
 // ── Addresses ────────────────────────────────────────────────────────────────
@@ -139,91 +121,52 @@ export const shippingApi = {
   getRates: (addressId: number) =>
     request(`/shipping/rates?address_id=${addressId}`, {}, true),
   setMethod: (orderId: number, method: string) =>
-    request(`/orders/${orderId}/shipping`, {
-      method: 'PUT',
-      body: JSON.stringify({ method }),
-    }, true),
+    request(`/orders/${orderId}/shipping`, { method: 'PUT', body: JSON.stringify({ method }) }, true),
 }
 
 // ── Payment ───────────────────────────────────────────────────────────────────
 export const paymentApi = {
   createSession: (orderId: number) =>
-    request(`/payment/session`, {
-      method: 'POST',
-      body: JSON.stringify({ order_id: orderId }),
-    }, true),
+    request('/payment/session', { method: 'POST', body: JSON.stringify({ order_id: orderId }) }, true),
 }
 
-// ── Inventory (admin) ─────────────────────────────────────────────────────────
-export const inventoryApi = {
-  list: () => request('/admin/inventory', {}, true),
-  update: (productId: number, qty: number) =>
-    request(`/admin/inventory/${productId}`, {
-      method: 'PUT',
-      body: JSON.stringify({ stock_qty: qty }),
-    }, true),
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN APIs
+// Chaque méthode correspond exactement aux appels dans les pages admin/
+// ─────────────────────────────────────────────────────────────────────────────
 
-// ── Admin aliases (backward-compatible exports) ───────────────────────────────
+// admin/orders/page.tsx utilise :
+//   adminOrderApi.list(limit, offset)
+//   adminOrderApi.update(id, { status?, payment_status? })
 export const adminOrderApi = {
-  list: (limit?: number, offset?: number) => {
-    const q = (limit != null || offset != null)
-      ? '?' + new URLSearchParams({
-          ...(limit != null ? { limit: String(limit) } : {}),
-          ...(offset != null ? { offset: String(offset) } : {}),
-        }).toString()
-      : ''
-    return request(`/admin/orders${q}`, {}, true)
-  },
-  update: (id: number, data: unknown) =>
-    request(`/orders/${id}`, { method: 'PATCH', body: JSON.stringify(data) }, true),
-  updateStatus: (id: number, status: string) =>
-    request(`/orders/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }, true),
-  updatePayment: (id: number, status: string) =>
-    request(`/orders/${id}/payment`, { method: 'PUT', body: JSON.stringify({ payment_status: status }) }, true),
+  list: (limit = 50, offset = 0) =>
+    request(`/admin/orders${qs({ limit, offset })}`, {}, true),
+  update: (id: number, data: { status?: string; payment_status?: string }) =>
+    request(`/admin/orders/${id}`, { method: 'PATCH', body: JSON.stringify(data) }, true),
 }
 
+// admin/products/page.tsx utilise :
+//   adminProductApi.list({ q?: string|undefined, limit?: number })
+//   adminProductApi.create(fd: FormData)
+//   adminProductApi.update(slug: string, fd: FormData)
+//   adminProductApi.softDelete(slug: string)
 export const adminProductApi = {
-  list: (params?: Record<string, string | number | undefined>) => {
-    const clean = Object.fromEntries(
-      Object.entries(params || {}).filter(([, v]) => v != null).map(([k, v]) => [k, String(v)])
-    )
-    const q = Object.keys(clean).length ? '?' + new URLSearchParams(clean).toString() : ''
-    return request(`/products${q}`, {}, true)
-  },
-  get: (slug: string) => request(`/products/${slug}`, {}, true),
-  create: (data: unknown) =>
-    request('/products', { method: 'POST', body: JSON.stringify(data) }, true),
-  update: (slugOrId: string | number, data: unknown) =>
-    request(`/products/${slugOrId}`, { method: 'PUT', body: JSON.stringify(data) }, true),
-  delete: (id: number) =>
-    request(`/products/${id}`, { method: 'DELETE' }, true),
-  softDelete: (slug: string) =>
-    request(`/products/${slug}`, { method: 'DELETE' }, true),
-  uploadImage: async (productId: number, file: File) => {
-    const fd = new FormData()
-    fd.append('file', file)
-    const token = getToken()
-    const res = await fetch(`/api/products/${productId}/image`, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: fd,
-    })
-    if (!res.ok) throw new Error('Upload échoué')
-    return res.json()
-  },
+  list: (params?: { q?: string | null | undefined; limit?: number; offset?: number; is_active?: boolean }) =>
+    request(`/admin/products${qs(params || {})}`, {}, true),
+  get: (slug: string) => request(`/admin/products/${slug}`, {}, true),
+  create: (fd: FormData) => requestForm('/admin/products', 'POST', fd),
+  update: (slug: string, fd: FormData) => requestForm(`/admin/products/${slug}`, 'PUT', fd),
+  softDelete: (slug: string) => request(`/admin/products/${slug}`, { method: 'DELETE' }, true),
 }
 
+// admin/inventory/page.tsx utilise :
+//   adminInventoryApi.setStock(id: number, qty: number | null)
+//   (uses adminProductApi.list too, already above)
 export const adminInventoryApi = {
-  list: () => request('/admin/inventory', {}, true),
-  setStock: (productId: number, qty: number) =>
-    request(`/admin/inventory/${productId}`, {
-      method: 'PUT',
-      body: JSON.stringify({ stock_qty: qty }),
-    }, true),
-  update: (productId: number, qty: number) =>
-    request(`/admin/inventory/${productId}`, {
-      method: 'PUT',
-      body: JSON.stringify({ stock_qty: qty }),
-    }, true),
+  setStock: (productId: number, qty: number | null) =>
+    request(
+      `/admin/inventory/products/${productId}`,
+      { method: 'PUT', body: JSON.stringify({ stock_qty: qty }) },
+      true,
+    ),
 }
