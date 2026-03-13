@@ -54,8 +54,8 @@ export const authApi = {
 
 // ── Products ──────────────────────────────────────────────────────────────────
 export const productApi = {
-  list: (params?: Record<string, string>) => {
-    const q = params ? '?' + new URLSearchParams(params).toString() : ''
+  list: (params?: Record<string, string | number>) => {
+    const q = params ? '?' + new URLSearchParams(Object.fromEntries(Object.entries(params).map(([k,v]) => [k, String(v)]))).toString() : ''
     return request(`/products${q}`)
   },
   get: (slug: string) => request(`/products/${slug}`),
@@ -117,8 +117,8 @@ export const orderApi = {
       method: 'PUT',
       body: JSON.stringify({ payment_status: status }),
     }, true),
-  adminList: (params?: Record<string, string>) => {
-    const q = params ? '?' + new URLSearchParams(params).toString() : ''
+  adminList: (params?: Record<string, string | number>) => {
+    const q = params ? '?' + new URLSearchParams(Object.fromEntries(Object.entries(params).map(([k,v]) => [k, String(v)]))).toString() : ''
     return request(`/admin/orders${q}`, {}, true)
   },
 }
@@ -166,8 +166,8 @@ export const inventoryApi = {
 
 // ── Admin aliases (backward-compatible exports) ───────────────────────────────
 export const adminOrderApi = {
-  list: (params?: Record<string, string>) => {
-    const q = params ? '?' + new URLSearchParams(params).toString() : ''
+  list: (params?: Record<string, string | number>) => {
+    const q = params ? '?' + new URLSearchParams(Object.fromEntries(Object.entries(params).map(([k,v]) => [k, String(v)]))).toString() : ''
     return request(`/admin/orders${q}`, {}, true)
   },
   updateStatus: (id: number, status: string) =>
@@ -183,8 +183,8 @@ export const adminOrderApi = {
 }
 
 export const adminProductApi = {
-  list: (params?: Record<string, string>) => {
-    const q = params ? '?' + new URLSearchParams(params).toString() : ''
+  list: (params?: Record<string, string | number>) => {
+    const q = params ? '?' + new URLSearchParams(Object.fromEntries(Object.entries(params).map(([k,v]) => [k, String(v)]))).toString() : ''
     return request(`/products${q}`, {}, true)
   },
   get: (slug: string) => request(`/products/${slug}`, {}, true),
