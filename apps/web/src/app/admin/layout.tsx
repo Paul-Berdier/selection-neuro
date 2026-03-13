@@ -1,48 +1,43 @@
 'use client'
 
-import { useState, useEffect, ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+
+import { useAuth } from '@/hooks/useAuth'
 import styles from './layout.module.css'
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  const [token, setToken] = useState('')
-  const [authed, setAuthed] = useState(false)
-  const [input, setInput] = useState('')
+  const router = useRouter()
+  const { user, loading, logout } = useAuth()
 
   useEffect(() => {
-    const t = localStorage.getItem('admin_token') || ''
-    if (t) { setToken(t); setAuthed(true) }
-  }, [])
+    if (loading) return
 
-  if (!authed) {
+    if (!user) {
+      router.replace('/login')
+      return
+    }
+
+    if (!user.is_admin) {
+      router.replace('/')
+    }
+  }, [user, loading, router])
+
+  if (loading) {
     return (
       <div className={styles.authPage}>
         <div className={styles.authCard}>
           <div className={styles.authLogo}>◆ Admin</div>
-          <h2>Admin Access</h2>
-          <input
-            className="input"
-            type="password"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            placeholder="Admin token"
-            onKeyDown={e => {
-              if (e.key === 'Enter' && input) {
-                localStorage.setItem('admin_token', input)
-                setToken(input)
-                setAuthed(true)
-              }
-            }}
-          />
-          <button
-            className="btn btn-primary w-full"
-            onClick={() => { if (input) { localStorage.setItem('admin_token', input); setToken(input); setAuthed(true) } }}
-          >Enter</button>
+          <h2>Loading…</h2>
         </div>
       </div>
     )
+  }
+
+  if (!user || !user.is_admin) {
+    return null
   }
 
   const nav = [
@@ -55,22 +50,31 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     <div className={styles.layout}>
       <aside className={styles.sidebar}>
         <div className={styles.sidebarLogo}>◆ Admin</div>
+
         <nav className={styles.sidebarNav}>
-          {nav.map(n => (
+          {nav.map((item) => (
             <Link
-              key={n.href}
-              href={n.href}
-              className={`${styles.navItem} ${pathname.startsWith(n.href) ? styles.navActive : ''}`}
+              key={item.href}
+              href={item.href}
+              className={`${styles.navItem} ${pathname.startsWith(item.href) ? styles.navActive : ''}`}
             >
-              <span className={styles.navIcon}>{n.icon}</span>
-              {n.label}
+              <span className={styles.navIcon}>{item.icon}</span>
+              {item.label}
             </Link>
           ))}
         </nav>
-        <button className={styles.logoutBtn} onClick={() => { localStorage.removeItem('admin_token'); setAuthed(false) }}>
+
+        <button
+          className={styles.logoutBtn}
+          onClick={() => {
+            logout()
+            router.replace('/login')
+          }}
+        >
           Sign out
         </button>
       </aside>
+
       <main className={styles.main}>{children}</main>
     </div>
   )

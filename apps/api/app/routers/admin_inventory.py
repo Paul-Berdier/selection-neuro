@@ -4,9 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.auth import require_admin_token
+from app.core.deps import require_admin
 from app.db.session import get_db
 from app.models.product import Product
+from app.models.user import User
 
 router = APIRouter(prefix="/admin/inventory", tags=["admin-inventory"])
 
@@ -19,13 +20,14 @@ class StockUpdateIn(BaseModel):
 def admin_set_product_stock(
     product_id: int,
     payload: StockUpdateIn,
+    _: User = Depends(require_admin),
     db: Session = Depends(get_db),
-    _: None = Depends(require_admin_token),
 ):
-    p = db.query(Product).filter(Product.id == product_id).first()
-    if not p:
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    p.stock_qty = payload.stock_qty
+    product.stock_qty = payload.stock_qty
     db.commit()
-    return {"ok": True, "product_id": p.id, "stock_qty": p.stock_qty}
+
+    return {"ok": True, "product_id": product.id, "stock_qty": product.stock_qty}

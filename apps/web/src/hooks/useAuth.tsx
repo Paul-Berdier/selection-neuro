@@ -1,10 +1,10 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { authApi } from '@/services/api'
 import type { User } from '@/types'
 
-interface AuthContext {
+interface AuthContextValue {
   user: User | null
   loading: boolean
   login: (email: string, password: string) => Promise<void>
@@ -12,7 +12,7 @@ interface AuthContext {
   refresh: () => Promise<void>
 }
 
-const Ctx = createContext<AuthContext>({
+const AuthContext = createContext<AuthContextValue>({
   user: null,
   loading: true,
   login: async () => {},
@@ -26,8 +26,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refresh = async () => {
     try {
-      const u = await authApi.me() as User
-      setUser(u)
+      const currentUser = (await authApi.me()) as User
+      setUser(currentUser)
     } catch {
       setUser(null)
     }
@@ -39,7 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     await authApi.login(email, password)
-    await refresh()
+    const currentUser = (await authApi.me()) as User
+    setUser(currentUser)
   }
 
   const logout = () => {
@@ -48,10 +49,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <Ctx.Provider value={{ user, loading, login, logout, refresh }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refresh }}>
       {children}
-    </Ctx.Provider>
+    </AuthContext.Provider>
   )
 }
 
-export const useAuth = () => useContext(Ctx)
+export const useAuth = () => useContext(AuthContext)

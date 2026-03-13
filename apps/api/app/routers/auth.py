@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.deps import get_current_user
+from app.core.security import create_access_token, hash_password, verify_password
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.auth import RegisterIn, LoginIn, TokenOut, UserOut
-from app.core.security import hash_password, verify_password, create_access_token
-from app.core.deps import get_current_user
+from app.schemas.auth import LoginIn, RegisterIn, TokenOut, UserOut
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/register", response_model=UserOut)
+@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def register(payload: RegisterIn, db: Session = Depends(get_db)):
     email = payload.email.lower().strip()
 
@@ -43,8 +43,11 @@ def login(payload: LoginIn, db: Session = Depends(get_db)):
     if not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    token = create_access_token(subject=user.email, extra_claims={"is_admin": user.is_admin})
-    return TokenOut(access_token=token)
+    token = create_access_token(
+        subject=user.email,
+        extra_claims={"is_admin": user.is_admin},
+    )
+    return TokenOut(access_token=token, token_type="bearer")
 
 
 @router.get("/me", response_model=UserOut)

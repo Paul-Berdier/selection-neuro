@@ -2,13 +2,16 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+
 import { useAuth } from '@/hooks/useAuth'
 import styles from './page.module.css'
 
 export default function LoginPage() {
   const { login } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -17,13 +20,17 @@ export default function LoginPage() {
   const handleSubmit = async () => {
     setLoading(true)
     setError('')
+
     try {
       await login(email, password)
-      router.push('/')
+
+      const redirectTo = searchParams.get('next')
+      router.push(redirectTo || '/')
     } catch (e: any) {
       setError(e.message || 'Invalid credentials')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   return (
@@ -40,20 +47,21 @@ export default function LoginPage() {
               className="input"
               type="email"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
             />
           </div>
+
           <div className="form-group">
             <label className="form-label">Password</label>
             <input
               className="input"
               type="password"
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
             />
           </div>
 
@@ -70,7 +78,9 @@ export default function LoginPage() {
 
         <p className={styles.footer}>
           Don&apos;t have an account?{' '}
-          <Link href="/register" className="text-accent">Create one</Link>
+          <Link href="/register" className="text-accent">
+            Create one
+          </Link>
         </p>
       </div>
     </div>
