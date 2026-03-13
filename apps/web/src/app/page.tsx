@@ -1,151 +1,194 @@
 import Link from 'next/link'
 import styles from './page.module.css'
 
-const features = [
+const pillars = [
   {
-    icon: '/ui/lightning.png',
-    title: 'Attention & vitesse',
-    desc: 'Modules à réponse rapide pour clarté mentale, démarrage net et concentration soutenue.',
+    title: 'Focus stack',
+    desc: 'Citicoline, L-Tyrosine et créatine pour une interface pensée pour la clarté, la vitesse et les décisions nettes.',
   },
   {
-    icon: '/ui/clock.png',
-    title: 'Endurance cognitive',
-    desc: 'Architecture pensée pour une progression stable, plus durable qu’un simple pic stimulant.',
+    title: 'Mémoire & récupération',
+    desc: 'Bacopa, DHA et magnésium pour soutenir l’encodage, la stabilité cognitive et la récupération mentale.',
   },
   {
-    icon: '/ui/network.png',
-    title: 'Synergie des stacks',
-    desc: 'Association de produits conçue pour jouer sur plusieurs mécanismes cérébraux en parallèle.',
+    title: 'Neuroplasticité',
+    desc: 'Lion’s Mane, uridine et cofacteurs pour une logique de stack orientée adaptation, structure et continuité.',
   },
-  {
-    icon: '/ui/chart.png',
-    title: 'Lecture scientifique',
-    desc: 'Hiérarchie claire, dosage lisible et parcours mobile-first optimisé pour comprendre vite.',
-  },
+]
+
+const proof = [
+  { value: '44+', label: 'cibles tactiles confortables' },
+  { value: '3', label: 'actions max par zone clé' },
+  { value: '1.618', label: 'rythme de proportions bento / CTA' },
 ]
 
 export default function Home() {
   return (
-    <div>
+    <div className={styles.page}>
       <section className={styles.heroSection}>
         <div className="container-lg">
-          <div className={styles.bento}>
-            <div className={`${styles.panel} ${styles.heroPanel}`}>
-              <div className={styles.heroContent}>
-                <span className={styles.eyebrow}>Sélection Neuro · Blagnac</span>
-                <h1 className={styles.heroTitle}>
-                  Glass commerce for <br />
-                  <span>cognitive stacks.</span>
-                </h1>
-                <p className={styles.heroDesc}>
-                  Refonte orientée mobile premium : bento UI, surfaces verre bleues, hiérarchie claire et accents jaunes réservés aux actions et repères clés.
-                </p>
-                <div className={styles.heroActions}>
-                  <Link href="/products" className="btn btn-primary btn-lg">Explorer les produits</Link>
-                  <Link href="/stacks" className="btn btn-secondary btn-lg">Voir les stacks</Link>
+          <div className={styles.heroShell}>
+            <div className={styles.heroIntro}>
+              <span className={styles.kicker}>Sélection Neuro · mobile first · glass bento</span>
+              <h1 className={styles.title}>
+                Une vitrine <span>premium</span>
+                <br /> pensée d’abord pour le téléphone.
+              </h1>
+              <p className={styles.lead}>
+                Refonte vers une UI bento en panneaux de verre, centrée sur une lecture mobile rapide,
+                des parcours courts et une hiérarchie visuelle plus nette autour d’un bleu électrique
+                avec accents jaunes.
+              </p>
+
+              <div className={styles.actionRow}>
+                <Link href="/products" className="btn btn-primary btn-lg">Explorer les produits</Link>
+                <Link href="/stacks" className="btn btn-secondary btn-lg">Voir les stacks</Link>
+              </div>
+
+              <div className={styles.signalRow}>
+                <span className={styles.signal}>Mobile-first layout</span>
+                <span className={styles.signal}>Glass depth</span>
+                <span className={styles.signal}>Fast scanning</span>
+              </div>
+            </div>
+
+            <div className={styles.phoneStage}>
+              <div className={styles.orbOne} />
+              <div className={styles.orbTwo} />
+              <div className={styles.phoneFrame}>
+                <div className={styles.phoneTopBar}>
+                  <span className={styles.phoneDot} />
+                  <span className={styles.phoneStatus}>09:41</span>
+                  <span className={styles.phoneMiniPill}>Live</span>
+                </div>
+
+                <div className={styles.phoneHeroCard}>
+                  <div>
+                    <span className={styles.cardEyebrow}>Stack recommandé</span>
+                    <h2>Performance Cognitive</h2>
+                    <p>Lisible en 3 secondes, actionnable en 1 geste.</p>
+                  </div>
+                  <div className={styles.heroGauge}>
+                    <span>68,7€</span>
+                    <small>/ mois</small>
+                  </div>
+                </div>
+
+                <div className={styles.miniGrid}>
+                  <div className={styles.miniCardTall}>
+                    <span className={styles.cardEyebrow}>Bénéfices</span>
+                    <ul>
+                      <li>Focus</li>
+                      <li>Mémoire</li>
+                      <li>Énergie</li>
+                    </ul>
+                  </div>
+                  <div className={styles.miniCard}>
+                    <span className={styles.cardEyebrow}>Score</span>
+                    <strong>4.8/5</strong>
+                  </div>
+                  <div className={styles.miniCard}>
+                    <span className={styles.cardEyebrow}>Actifs</span>
+                    <strong>7</strong>
+                  </div>
+                </div>
+
+                <div className={styles.bottomTray}>
+                  <div className={styles.tabActive}>Accueil</div>
+                  <div className={styles.tab}>Catalogue</div>
+                  <div className={styles.tab}>Compte</div>
                 </div>
               </div>
+            </div>
 
-              <div className={styles.heroVisual}>
-                <div className={styles.phoneShell}>
-                  <div className={styles.phoneTopBar}>
-                    <span>Menu</span>
-                    <span className={styles.statusDots}><i /><i /><i /></span>
-                  </div>
-                  <div className={styles.phoneGrid}>
-                    <div className={`${styles.phoneCard} ${styles.phoneImageCard}`}>
-                      <img src="/ui/lightning.png" alt="Lightning icon" />
-                      <div>
-                        <strong>Focus</strong>
-                        <span>Hero visuel bleu verre</span>
-                      </div>
-                    </div>
-                    <div className={styles.phoneRow}>
-                      <div className={styles.phoneMini}><img src="/ui/network.png" alt="Network icon" /></div>
-                      <div className={styles.phoneMini}><img src="/ui/chart.png" alt="Chart icon" /></div>
-                    </div>
-                    <div className={styles.phoneTextCard}>
-                      <span className={styles.cardTag}>Bento mobile</span>
-                      <p>Blocs basés sur une logique de proportions harmonisées pour CTA, contenus et surfaces tactiles.</p>
-                    </div>
-                    <div className={styles.phoneCta}>Commencer</div>
-                  </div>
-                </div>
-                <img className={`${styles.floatingIcon} ${styles.iconA}`} src="/ui/code.png" alt="Code icon" />
-                <img className={`${styles.floatingIcon} ${styles.iconB}`} src="/ui/lock.png" alt="Lock icon" />
+            <div className={styles.sideStack}>
+              <div className={styles.infoCard}>
+                <span className={styles.cardEyebrow}>UX intent</span>
+                <h3>Hiérarchie simple</h3>
+                <p>Une zone dominante, deux actions principales, puis des cartes secondaires compactes.</p>
               </div>
-            </div>
-
-            <div className={`${styles.panel} ${styles.statsPanel}`}>
-              <span className={styles.panelLabel}>Signals</span>
-              <div className={styles.metric}><strong>4.8</strong><span>score de confiance</span></div>
-              <div className={styles.metric}><strong>+63%</strong><span>gain de lisibilité perçue vs style précédent</span></div>
-              <div className={styles.metric}><strong>48px+</strong><span>zones d’action tactiles</span></div>
-              <div className={styles.metricAccent}>Accent jaune réservé aux CTA et marqueurs critiques.</div>
-            </div>
-
-            <div className={`${styles.panel} ${styles.guidelinePanel}`}>
-              <span className={styles.panelLabel}>Guidelines</span>
-              <ul className={styles.guidelinesList}>
-                <li>Palette centrée sur les PNG bleus verre fournis.</li>
-                <li>Jaune utilisé uniquement pour call-to-action, focus et badges.</li>
-                <li>Panneaux glass avec bord lumineux et blur contrôlé.</li>
-                <li>Disposition mobile-first type bento, pensée pour téléphone.</li>
-              </ul>
-            </div>
-
-            <div className={`${styles.panel} ${styles.flowPanel}`}>
-              <span className={styles.panelLabel}>UI flow</span>
-              <div className={styles.flowCards}>
-                <div className={styles.flowCard}><img src="/ui/lightning.png" alt="" /><span>Hero</span></div>
-                <div className={styles.flowArrow}>→</div>
-                <div className={styles.flowCard}><img src="/ui/network.png" alt="" /><span>Catalogue</span></div>
-                <div className={styles.flowArrow}>→</div>
-                <div className={styles.flowCard}><img src="/ui/lock.png" alt="" /><span>Checkout</span></div>
-              </div>
-            </div>
-
-            <div className={`${styles.panel} ${styles.boardPanel}`}>
-              <img src="/ui/style-board.png" alt="Moodboard bleu verre" className={styles.boardImage} />
-              <div className={styles.boardOverlay}>
-                <span className={styles.panelLabel}>Direction</span>
-                <p>Référence visuelle : surfaces translucides, profondeur bleue, reflets froids et ponctuation jaune minimale.</p>
+              <div className={styles.infoCard}>
+                <span className={styles.cardEyebrow}>Color system</span>
+                <h3>Bleu verre + halo jaune</h3>
+                <p>Base sombre, panneaux translucides, reflets cobalt et points d’accent pour guider l’œil.</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className={`section ${styles.featuresSection}`}>
-        <div className="container">
-          <div className={styles.sectionHeader}>
-            <span className={styles.eyebrow}>Best UI & UX methods 2026</span>
-            <h2>Une base premium, cohérente et scalable</h2>
-            <p>Le système visuel tourne uniquement autour des bleus verre fournis, avec un accent jaune très contrôlé pour garder la hiérarchie nette.</p>
-          </div>
-          <div className={styles.featuresGrid}>
-            {features.map((feature) => (
-              <div key={feature.title} className={styles.featureCard}>
-                <div className={styles.featureIconWrap}>
-                  <img src={feature.icon} alt="" className={styles.featureIcon} />
-                </div>
-                <h3>{feature.title}</h3>
-                <p>{feature.desc}</p>
+      <section className={styles.metricsSection}>
+        <div className="container-lg">
+          <div className={styles.metricsGrid}>
+            {proof.map((item) => (
+              <div key={item.label} className={styles.metricCard}>
+                <span>{item.value}</span>
+                <p>{item.label}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className={`section ${styles.ctaSection}`}>
+      <section className={styles.bentoSection}>
+        <div className="container-lg">
+          <div className={styles.bentoGrid}>
+            <div className={`${styles.panel} ${styles.panelLarge}`}>
+              <span className={styles.cardEyebrow}>Architecture produit</span>
+              <h2>Une home structurée comme une fiche premium.</h2>
+              <p>
+                Le bloc principal pousse la proposition de valeur, la maquette téléphone sert de preuve visuelle,
+                et les cartes autour raccourcissent le temps de compréhension.
+              </p>
+              <div className={styles.panelTags}>
+                <span>Scan rapide</span>
+                <span>Contraste maîtrisé</span>
+                <span>CTA visible</span>
+                <span>Sections courtes</span>
+              </div>
+            </div>
+
+            <div className={`${styles.panel} ${styles.panelTall}`}>
+              <span className={styles.cardEyebrow}>Parcours mobile</span>
+              <div className={styles.timeline}>
+                <div>
+                  <strong>01</strong>
+                  <p>Promesse claire en tête de page</p>
+                </div>
+                <div>
+                  <strong>02</strong>
+                  <p>Preuve visuelle + prix immédiatement visibles</p>
+                </div>
+                <div>
+                  <strong>03</strong>
+                  <p>Navigation courte vers produits et stacks</p>
+                </div>
+              </div>
+            </div>
+
+            {pillars.map((item) => (
+              <div key={item.title} className={styles.panel}>
+                <span className={styles.cardEyebrow}>Stack logic</span>
+                <h3>{item.title}</h3>
+                <p>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.ctaSection}>
         <div className="container-sm">
           <div className={styles.ctaCard}>
-            <span className={styles.eyebrow}>Build pattern</span>
-            <h2>Unifier produits, stacks et compte client dans une même logique glass.</h2>
-            <p>Le thème garde un langage visuel unique sur desktop et mobile, avec modules réutilisables, contrastes plus propres et expérience plus premium.</p>
-            <div className={styles.ctaActions}>
-              <Link href="/products" className="btn btn-primary">Catalogue</Link>
-              <Link href="/stacks" className="btn btn-secondary">Architecture des stacks</Link>
+            <span className={styles.kicker}>Sélection Neuro · glass mobile storefront</span>
+            <h2>Une base plus forte pour continuer tout le site.</h2>
+            <p>
+              La home pose désormais une direction cohérente pour décliner catalogue, fiches produit,
+              panier et checkout avec le même langage visuel.
+            </p>
+            <div className={styles.actionRowCenter}>
+              <Link href="/products" className="btn btn-primary">Ouvrir le catalogue</Link>
+              <Link href="/stacks" className="btn btn-secondary">Comparer les stacks</Link>
             </div>
           </div>
         </div>
