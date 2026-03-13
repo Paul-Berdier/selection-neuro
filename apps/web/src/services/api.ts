@@ -163,3 +163,56 @@ export const inventoryApi = {
       body: JSON.stringify({ stock_qty: qty }),
     }, true),
 }
+
+// ── Admin aliases (backward-compatible exports) ───────────────────────────────
+export const adminOrderApi = {
+  list: (params?: Record<string, string>) => {
+    const q = params ? '?' + new URLSearchParams(params).toString() : ''
+    return request(`/admin/orders${q}`, {}, true)
+  },
+  updateStatus: (id: number, status: string) =>
+    request(`/orders/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    }, true),
+  updatePayment: (id: number, status: string) =>
+    request(`/orders/${id}/payment`, {
+      method: 'PUT',
+      body: JSON.stringify({ payment_status: status }),
+    }, true),
+}
+
+export const adminProductApi = {
+  list: (params?: Record<string, string>) => {
+    const q = params ? '?' + new URLSearchParams(params).toString() : ''
+    return request(`/products${q}`, {}, true)
+  },
+  get: (slug: string) => request(`/products/${slug}`, {}, true),
+  create: (data: unknown) =>
+    request('/products', { method: 'POST', body: JSON.stringify(data) }, true),
+  update: (id: number, data: unknown) =>
+    request(`/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }, true),
+  delete: (id: number) =>
+    request(`/products/${id}`, { method: 'DELETE' }, true),
+  uploadImage: async (productId: number, file: File) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    const token = getToken()
+    const res = await fetch(`/api/products/${productId}/image`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: fd,
+    })
+    if (!res.ok) throw new Error('Upload échoué')
+    return res.json()
+  },
+}
+
+export const adminInventoryApi = {
+  list: () => request('/admin/inventory', {}, true),
+  update: (productId: number, qty: number) =>
+    request(`/admin/inventory/${productId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ stock_qty: qty }),
+    }, true),
+}
