@@ -23,6 +23,7 @@
   --accent-2: #4a79ff;
   --accent-soft: #8fb1ff;
   --accent-bg: rgba(255, 214, 102, 0.12);
+  --accent-dim: rgba(255, 214, 102, 0.4);
   --success: #52d0a8;
   --error: #ff7c8d;
   --warning: #ffd666;

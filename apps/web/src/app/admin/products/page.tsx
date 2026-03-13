@@ -16,7 +16,7 @@ interface AdminProduct {
   is_active: boolean
 }
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const API = ''
 
 function ProductForm({ initial, onSuccess, onCancel }: {
   initial?: AdminProduct

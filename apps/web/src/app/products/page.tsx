@@ -27,7 +27,7 @@ function ProductCard({ product }: { product: Product }) {
     <Link href={`/products/${product.slug}`} className={styles.card}>
       <div className={styles.cardImage}>
         {product.image_url ? (
-          <img src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${product.image_url}`} alt={product.name} />
+          <img src={`${''}${product.image_url}`} alt={product.name} />
         ) : (
           <div className={styles.imagePlaceholder}>
             <span>◆</span>
@@ -41,15 +41,15 @@ function ProductCard({ product }: { product: Product }) {
         <div className={styles.cardFooter}>
           <span className={styles.price}>
             {product.price_month_eur != null
-              ? `€${product.price_month_eur.toFixed(2)}/mo`
-              : 'Price on request'}
+              ? `€${product.price_month_eur.toFixed(2)}/mois`
+              : 'Prix sur demande'}
           </span>
           <button
             className={`btn btn-primary btn-sm ${styles.addBtn}`}
             onClick={handleAdd}
             disabled={adding || added}
           >
-            {added ? '✓ Added' : adding ? '...' : 'Add'}
+            {added ? '✓ Ajouté' : adding ? '...' : 'Ajouter'}
           </button>
         </div>
       </div>
@@ -86,9 +86,9 @@ export default function ProductsPage() {
     <div>
       <div className={styles.hero}>
         <div className="container">
-          <span className={styles.eyebrow}>Our Collection</span>
-          <h1 className="page-title">All Products</h1>
-          <p className="page-subtitle">Precision formulas for every goal</p>
+          <span className={styles.eyebrow}>Notre sélection</span>
+          <h1 className="page-title">Tous les produits</h1>
+          <p className="page-subtitle">Formules précises pour chaque objectif</p>
         </div>
       </div>
 
@@ -109,7 +109,7 @@ export default function ProductsPage() {
             <button
               className={`${styles.catBtn} ${search === '' ? styles.catActive : ''}`}
               onClick={() => setSearch('')}
-            >All</button>
+            >Tous</button>
             {categories.map(c => (
               <button
                 key={c}
@@ -134,14 +134,14 @@ export default function ProductsPage() {
           </div>
         ) : (
           <>
-            <p className={styles.resultCount}>{filtered.length} product{filtered.length !== 1 ? 's' : ''}</p>
+            <p className={styles.resultCount}>{filtered.length} produit{filtered.length !== 1 ? 's' : ''}</p>
             <div className={styles.grid}>
               {filtered.map(p => <ProductCard key={p.slug} product={p} />)}
             </div>
             {filtered.length === 0 && (
               <div className={styles.empty}>
                 <span>◌</span>
-                <p>No products found</p>
+                <p>Aucun produit trouvé</p>
               </div>
             )}
           </>

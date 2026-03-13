@@ -28,7 +28,7 @@ export default function CartPage() {
     }
   }
 
-  const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+  
 
   if (!cart || cart.items.length === 0) {
     return (
@@ -39,8 +39,8 @@ export default function CartPage() {
             <path d="M16 10a4 4 0 01-8 0"/>
           </svg>
           <h2>Votre panier est vide</h2>
-          <p>Add some products to get started</p>
-          <Link href="/products" className="btn btn-primary" style={{ marginTop: 8 }}>Browse Products</Link>
+          <p>Ajoutez des produits pour commencer</p>
+          <Link href="/products" className="btn btn-primary" style={{ marginTop: 8 }}>Parcourir le catalogue</Link>
         </div>
       </div>
     )
@@ -48,8 +48,8 @@ export default function CartPage() {
 
   return (
     <div className="container" style={{ paddingTop: 60, paddingBottom: 80 }}>
-      <h1 className={styles.title}>Your Cart</h1>
-      <p className={styles.subtitle}>{cart.total_items} item{cart.total_items !== 1 ? 's' : ''}</p>
+      <h1 className={styles.title}>Mon Panier</h1>
+      <p className={styles.subtitle}>{cart.total_items} article{cart.total_items !== 1 ? 's' : ''}</p>
 
       <div className={styles.layout}>
         <div className={styles.items}>
@@ -57,7 +57,7 @@ export default function CartPage() {
             <div key={item.id} className={styles.item}>
               <div className={styles.itemImage}>
                 {item.image_url ? (
-                  <img src={`${API}${item.image_url}`} alt={item.product_name} />
+                  <img src={`/api${item.image_url}`} alt={item.product_name} />
                 ) : (
                   <div className={styles.imgPlaceholder}>◆</div>
                 )}
@@ -86,20 +86,20 @@ export default function CartPage() {
         <div className={styles.summary}>
           <div className="card">
             <div className="card-header">
-              <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}>Order Summary</h3>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}>Récapitulatif</h3>
             </div>
             <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div className={styles.summaryRow}>
-                <span>Subtotal ({cart.total_items} items)</span>
+                <span>Sous-total ({cart.total_items} articles)</span>
                 <span>€{cart.subtotal.toFixed(2)}</span>
               </div>
               <div className={styles.summaryRow} style={{ color: 'var(--text-3)', fontSize: 12 }}>
-                <span>Shipping & taxes</span>
-                <span>calculated at checkout</span>
+                <span>Livraison Livraison & taxes taxes</span>
+                <span>calculé à la commande</span>
               </div>
               <div className="divider" style={{ margin: '4px 0' }} />
               <div className={styles.summaryTotal}>
-                <span>Estimated Total</span>
+                <span>Total estimé</span>
                 <span>€{cart.subtotal.toFixed(2)}</span>
               </div>
             </div>
@@ -110,10 +110,10 @@ export default function CartPage() {
                 onClick={handleCheckout}
                 disabled={checkingOut}
               >
-                {checkingOut ? 'Creating order…' : 'Proceed to Checkout'}
+                {checkingOut ? 'Création de la commande…' : 'Passer la commande'}
               </button>
               <Link href="/products" className="btn btn-ghost w-full" style={{ textAlign: 'center' }}>
-                Continue Shopping
+                Continuer mes achats
               </Link>
             </div>
           </div>

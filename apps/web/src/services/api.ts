@@ -1,4 +1,14 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+// ─────────────────────────────────────────────────────────────────────────────
+// API client — uses /api proxy (rewrites in next.config.js) so the browser
+// ALWAYS calls the same origin (HTTPS). No mixed-content errors.
+//
+// Railway setup:
+//   • Set  API_URL  (server-side, NOT NEXT_PUBLIC) = internal URL of your
+//     FastAPI service, e.g.  http://selection-neuro.railway.internal:8080
+//   • Do NOT set NEXT_PUBLIC_API_URL anymore.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const BASE = '/api'
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null
@@ -14,174 +24,142 @@ async function request<T>(
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
   }
-
   if (auth) {
     const token = getToken()
     if (token) headers['Authorization'] = `Bearer ${token}`
   }
-
-  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
-
+  const res = await fetch(`${BASE}${path}`, { ...options, headers })
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: 'Request failed' }))
-    throw new Error(err.detail || 'Request failed')
+    const err = await res.json().catch(() => ({ detail: 'Requête échouée' }))
+    throw new Error(err.detail || 'Requête échouée')
   }
-
   if (res.status === 204) return undefined as T
   return res.json()
 }
 
-// ─── Auth ───────────────────────────────────────────────
+// ── Auth ──────────────────────────────────────────────────────────────────────
 export const authApi = {
-  register: (email: string, password: string) =>
-    request('/auth/register', { method: 'POST', body: JSON.stringify({ email, password }) }),
-
-  login: async (email: string, password: string): Promise<{ access_token: string }> => {
-    const data = await request<{ access_token: string }>('/auth/login', {
+  login: (email: string, password: string) =>
+    request('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
-    })
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('access_token', data.access_token)
-    }
-    return data
-  },
-
-  logout: () => {
-    if (typeof window !== 'undefined') localStorage.removeItem('access_token')
-  },
-
+    }),
+  register: (email: string, password: string, full_name?: string) =>
+    request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, full_name }),
+    }),
   me: () => request('/auth/me', {}, true),
 }
 
-// ─── Addresses ──────────────────────────────────────────
-export const addressApi = {
-  list: () => request('/addresses', {}, true),
-  create: (payload: object) => request('/addresses', { method: 'POST', body: JSON.stringify(payload) }, true),
-  get: (id: number) => request(`/addresses/${id}`, {}, true),
-  update: (id: number, payload: object) => request(`/addresses/${id}`, { method: 'PUT', body: JSON.stringify(payload) }, true),
-  delete: (id: number) => request(`/addresses/${id}`, { method: 'DELETE' }, true),
-}
-
-// ─── Products ───────────────────────────────────────────
+// ── Products ──────────────────────────────────────────────────────────────────
 export const productApi = {
-  list: (params?: { q?: string; is_active?: boolean }) => {
-    const qs = new URLSearchParams()
-    if (params?.q) qs.set('q', params.q)
-    if (params?.is_active !== undefined) qs.set('is_active', String(params.is_active))
-    return request(`/products?${qs}`)
+  list: (params?: Record<string, string>) => {
+    const q = params ? '?' + new URLSearchParams(params).toString() : ''
+    return request(`/products${q}`)
   },
   get: (slug: string) => request(`/products/${slug}`),
-}
-
-// ─── Cart ────────────────────────────────────────────────
-export const cartApi = {
-  get: () => request('/cart', {}, true),
-  addItem: (product_id: number, quantity: number) =>
-    request('/cart/items', { method: 'POST', body: JSON.stringify({ product_id, quantity }) }, true),
-  updateItem: (item_id: number, quantity: number) =>
-    request(`/cart/items/${item_id}`, { method: 'PATCH', body: JSON.stringify({ quantity }) }, true),
-  deleteItem: (item_id: number) =>
-    request(`/cart/items/${item_id}`, { method: 'DELETE' }, true),
-}
-
-// ─── Orders ──────────────────────────────────────────────
-export const orderApi = {
-  list: () => request('/orders', {}, true),
-  get: (id: number) => request(`/orders/${id}`, {}, true),
-  create: () => request('/orders', { method: 'POST' }, true),
-  setAddresses: (id: number, shipping_address_id: number, billing_address_id?: number) =>
-    request(`/orders/${id}/addresses`, {
-      method: 'PUT',
-      body: JSON.stringify({ shipping_address_id, billing_address_id }),
-    }, true),
-  setShipping: (id: number, shipping_method: string) =>
-    request(`/orders/${id}/shipping`, { method: 'PUT', body: JSON.stringify({ shipping_method }) }, true),
-}
-
-// ─── Shipping ────────────────────────────────────────────
-export const shippingApi = {
-  getRates: (address_id?: number) => {
-    const qs = address_id ? `?address_id=${address_id}` : ''
-    return request(`/shipping/rates${qs}`, {}, true)
+  create: (data: unknown) =>
+    request('/products', { method: 'POST', body: JSON.stringify(data) }, true),
+  update: (id: number, data: unknown) =>
+    request(`/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }, true),
+  delete: (id: number) =>
+    request(`/products/${id}`, { method: 'DELETE' }, true),
+  uploadImage: async (productId: number, file: File) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    const token = getToken()
+    const res = await fetch(`${BASE}/products/${productId}/image`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: fd,
+    })
+    if (!res.ok) throw new Error('Upload échoué')
+    return res.json()
   },
 }
 
-// ─── Stacks ──────────────────────────────────────────────
+// ── Stacks ────────────────────────────────────────────────────────────────────
 export const stackApi = {
   list: () => request('/stacks'),
   get: (slug: string) => request(`/stacks/${slug}`),
 }
 
-// ─── Payments ────────────────────────────────────────────
-export const paymentApi = {
-  createCheckoutSession: (order_id: number) =>
-    request('/payments/stripe/checkout-session', {
+// ── Cart ──────────────────────────────────────────────────────────────────────
+export const cartApi = {
+  get: () => request('/cart', {}, true),
+  addItem: (product_id: number, quantity: number) =>
+    request('/cart/items', {
       method: 'POST',
-      body: JSON.stringify({ order_id }),
+      body: JSON.stringify({ product_id, quantity }),
+    }, true),
+  updateItem: (itemId: number, quantity: number) =>
+    request(`/cart/items/${itemId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ quantity }),
+    }, true),
+  removeItem: (itemId: number) =>
+    request(`/cart/items/${itemId}`, { method: 'DELETE' }, true),
+}
+
+// ── Orders ────────────────────────────────────────────────────────────────────
+export const orderApi = {
+  create: () => request('/orders', { method: 'POST' }, true),
+  list: () => request('/orders', {}, true),
+  get: (id: number) => request(`/orders/${id}`, {}, true),
+  updateStatus: (id: number, status: string) =>
+    request(`/orders/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    }, true),
+  updatePayment: (id: number, status: string) =>
+    request(`/orders/${id}/payment`, {
+      method: 'PUT',
+      body: JSON.stringify({ payment_status: status }),
+    }, true),
+  adminList: (params?: Record<string, string>) => {
+    const q = params ? '?' + new URLSearchParams(params).toString() : ''
+    return request(`/admin/orders${q}`, {}, true)
+  },
+}
+
+// ── Addresses ────────────────────────────────────────────────────────────────
+export const addressApi = {
+  list: () => request('/addresses', {}, true),
+  create: (data: unknown) =>
+    request('/addresses', { method: 'POST', body: JSON.stringify(data) }, true),
+  update: (id: number, data: unknown) =>
+    request(`/addresses/${id}`, { method: 'PUT', body: JSON.stringify(data) }, true),
+  delete: (id: number) =>
+    request(`/addresses/${id}`, { method: 'DELETE' }, true),
+}
+
+// ── Shipping ──────────────────────────────────────────────────────────────────
+export const shippingApi = {
+  getRates: (addressId: number) =>
+    request(`/shipping/rates?address_id=${addressId}`, {}, true),
+  setMethod: (orderId: number, method: string) =>
+    request(`/orders/${orderId}/shipping`, {
+      method: 'PUT',
+      body: JSON.stringify({ method }),
     }, true),
 }
 
-// ─── Admin ───────────────────────────────────────────────
-function getAdminToken(): string {
-  if (typeof window === 'undefined') return ''
-  return localStorage.getItem('admin_token') || ''
-}
-
-async function adminRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'X-Admin-Token': getAdminToken(),
-    ...(options.headers as Record<string, string>),
-  }
-  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: 'Request failed' }))
-    throw new Error(err.detail || 'Request failed')
-  }
-  return res.json()
-}
-
-export const adminOrderApi = {
-  list: (limit = 50, offset = 0) => adminRequest(`/admin/orders?limit=${limit}&offset=${offset}`),
-  get: (id: number) => adminRequest(`/admin/orders/${id}`),
-  update: (id: number, payload: { status?: string; payment_status?: string }) =>
-    adminRequest(`/admin/orders/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
-}
-
-export const adminInventoryApi = {
-  setStock: (product_id: number, stock_qty: number | null) =>
-    adminRequest(`/admin/inventory/products/${product_id}`, {
-      method: 'PUT',
-      body: JSON.stringify({ stock_qty }),
-    }),
-}
-
-export const adminProductApi = {
-  list: (params?: { q?: string; is_active?: boolean; limit?: number; offset?: number }) => {
-    const qs = new URLSearchParams()
-    if (params?.q) qs.set('q', params.q)
-    if (params?.is_active !== undefined) qs.set('is_active', String(params.is_active))
-    if (params?.limit) qs.set('limit', String(params.limit))
-    if (params?.offset) qs.set('offset', String(params.offset))
-    return adminRequest(`/admin/products?${qs}`)
-  },
-  get: (slug: string) => adminRequest(`/admin/products/${slug}`),
-  create: (formData: FormData) => {
-    const token = getAdminToken()
-    return fetch(`${BASE_URL}/admin/products`, {
+// ── Payment ───────────────────────────────────────────────────────────────────
+export const paymentApi = {
+  createSession: (orderId: number) =>
+    request(`/payment/session`, {
       method: 'POST',
-      headers: { 'X-Admin-Token': token },
-      body: formData,
-    }).then(r => r.json())
-  },
-  update: (slug: string, formData: FormData) => {
-    const token = getAdminToken()
-    return fetch(`${BASE_URL}/admin/products/${slug}`, {
+      body: JSON.stringify({ order_id: orderId }),
+    }, true),
+}
+
+// ── Inventory (admin) ─────────────────────────────────────────────────────────
+export const inventoryApi = {
+  list: () => request('/admin/inventory', {}, true),
+  update: (productId: number, qty: number) =>
+    request(`/admin/inventory/${productId}`, {
       method: 'PUT',
-      headers: { 'X-Admin-Token': token },
-      body: formData,
-    }).then(r => r.json())
-  },
-  softDelete: (slug: string) => adminRequest(`/admin/products/${slug}`, { method: 'DELETE' }),
+      body: JSON.stringify({ stock_qty: qty }),
+    }, true),
 }

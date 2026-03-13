@@ -6,13 +6,13 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 
 export const metadata: Metadata = {
-  title: 'Élixir — Premium Supplements',
-  description: 'Curated stacks of science-backed supplements for optimal performance.',
+  title: 'Sélection Neuro — Soutien cognitif',
+  description: 'Compléments nootropiques en formes actives, dosages cliniques. Blagnac, Toulouse.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="fr">
       <body>
         <AuthProvider>
           <CartProvider>

@@ -54,24 +54,24 @@ export default function ProductDetailPage() {
 
   if (!product) return (
     <div className="container" style={{ paddingTop: 80, textAlign: 'center' }}>
-      <p className="text-muted">Product not found.</p>
-      <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={() => router.push('/products')}>Back to products</button>
+      <p className="text-muted">Produit introuvable.</p>
+      <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={() => router.push('/products')}>Retour aux produits</button>
     </div>
   )
 
-  const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+  
 
   return (
     <div className="container" style={{ paddingTop: 60, paddingBottom: 80 }}>
       <button className={styles.back} onClick={() => router.back()}>
-        ← Back
+        ← Retour
       </button>
 
       <div className={styles.layout}>
         {/* Image */}
         <div className={styles.imageWrap}>
           {product.image_url ? (
-            <img src={`${API}${product.image_url}`} alt={product.name} className={styles.image} />
+            <img src={`/api${product.image_url}`} alt={product.name} className={styles.image} />
           ) : (
             <div className={styles.imagePlaceholder}><span>◆</span></div>
           )}
@@ -98,7 +98,7 @@ export default function ProductDetailPage() {
               {product.price_month_eur != null ? (
                 <>
                   <span className={styles.priceAmount}>€{product.price_month_eur.toFixed(2)}</span>
-                  <span className={styles.pricePer}>/month</span>
+                  <span className={styles.pricePer}>/moisnth</span>
                 </>
               ) : (
                 <span className={styles.priceAmount}>Price on request</span>
@@ -118,7 +118,7 @@ export default function ProductDetailPage() {
               onClick={handleAdd}
               disabled={adding || added}
             >
-              {added ? '✓ Added to cart' : adding ? 'Adding…' : 'Add to Cart'}
+              {added ? '✓ Added to cart' : adding ? 'Adding…' : 'Ajouter au panier'}
             </button>
           </div>
 
