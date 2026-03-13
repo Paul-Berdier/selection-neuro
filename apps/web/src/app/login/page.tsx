@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 import { useAuth } from '@/hooks/useAuth'
 import styles from './page.module.css'
 
-export default function LoginPage() {
+function LoginContent() {
   const { login } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -84,5 +84,25 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+function LoginFallback() {
+  return (
+    <div className={styles.page}>
+      <div className={styles.card}>
+        <div className={styles.logo}>◆ Élixir</div>
+        <h1 className={styles.title}>Welcome back</h1>
+        <p className={styles.subtitle}>Loading…</p>
+      </div>
+    </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFallback />}>
+      <LoginContent />
+    </Suspense>
   )
 }
