@@ -1,9 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// API client — utilise le proxy /api/* (next.config.js rewrites)
-// Le browser appelle toujours le même domaine HTTPS → zéro mixed-content.
-//
-// Railway : définir  API_URL  (server-side, PAS NEXT_PUBLIC_)
-//   ex: http://selection-neuro.railway.internal:8080
+// API client — proxy /api/* (next.config.js rewrites)
+// Railway : définir API_URL (server-side, sans NEXT_PUBLIC_)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const BASE = '/api'
@@ -13,7 +10,6 @@ function getToken(): string | null {
   return localStorage.getItem('access_token')
 }
 
-// ── Requête générique ─────────────────────────────────────────────────────────
 async function request<T>(
   path: string,
   options: RequestInit = {},
@@ -36,7 +32,6 @@ async function request<T>(
   return res.json()
 }
 
-// Requête FormData (multipart) — sans Content-Type (laissé au browser)
 async function requestForm<T>(
   path: string,
   method: 'POST' | 'PUT' | 'PATCH',
@@ -53,7 +48,6 @@ async function requestForm<T>(
   return res.json()
 }
 
-// Construit un query-string en ignorant les valeurs null/undefined
 function qs(params: Record<string, string | number | boolean | null | undefined>): string {
   const entries = Object.entries(params)
     .filter(([, v]) => v != null)
@@ -68,6 +62,10 @@ export const authApi = {
   register: (email: string, password: string, full_name?: string) =>
     request('/auth/register', { method: 'POST', body: JSON.stringify({ email, password, full_name }) }),
   me: () => request('/auth/me', {}, true),
+  // useAuth.tsx:46 appelle authApi.logout()
+  logout: () => {
+    if (typeof window !== 'undefined') localStorage.removeItem('access_token')
+  },
 }
 
 // ── Products (public) ─────────────────────────────────────────────────────────
@@ -88,10 +86,13 @@ export const cartApi = {
   get: () => request('/cart', {}, true),
   addItem: (product_id: number, quantity: number) =>
     request('/cart/items', { method: 'POST', body: JSON.stringify({ product_id, quantity }) }, true),
-  updateItem: (itemId: number, quantity: number) =>
-    request(`/cart/items/${itemId}`, { method: 'PUT', body: JSON.stringify({ quantity }) }, true),
-  removeItem: (itemId: number) =>
-    request(`/cart/items/${itemId}`, { method: 'DELETE' }, true),
+  updateItem: (item_id: number, quantity: number) =>
+    request(`/cart/items/${item_id}`, { method: 'PUT', body: JSON.stringify({ quantity }) }, true),
+  // useCart.tsx:66 appelle cartApi.deleteItem (alias de removeItem)
+  deleteItem: (item_id: number) =>
+    request(`/cart/items/${item_id}`, { method: 'DELETE' }, true),
+  removeItem: (item_id: number) =>
+    request(`/cart/items/${item_id}`, { method: 'DELETE' }, true),
 }
 
 // ── Orders ────────────────────────────────────────────────────────────────────
@@ -99,6 +100,26 @@ export const orderApi = {
   create: () => request('/orders', { method: 'POST' }, true),
   list: () => request('/orders', {}, true),
   get: (id: number) => request(`/orders/${id}`, {}, true),
+  // checkout/page.tsx:69 — lie les adresses à une commande
+  setAddresses: (orderId: number, shippingAddressId: number, billingAddressId?: number) =>
+    request(
+      `/orders/${orderId}/addresses`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({
+          shipping_address_id: shippingAddressId,
+          billing_address_id: billingAddressId ?? shippingAddressId,
+        }),
+      },
+      true,
+    ),
+  // checkout/page.tsx:82 — choisit le mode de livraison
+  setShipping: (orderId: number, method: string) =>
+    request(
+      `/orders/${orderId}/shipping`,
+      { method: 'PUT', body: JSON.stringify({ shipping_method: method }) },
+      true,
+    ),
   updateStatus: (id: number, status: string) =>
     request(`/orders/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }, true),
   updatePayment: (id: number, status: string) =>
@@ -120,24 +141,22 @@ export const addressApi = {
 export const shippingApi = {
   getRates: (addressId: number) =>
     request(`/shipping/rates?address_id=${addressId}`, {}, true),
-  setMethod: (orderId: number, method: string) =>
-    request(`/orders/${orderId}/shipping`, { method: 'PUT', body: JSON.stringify({ method }) }, true),
 }
 
 // ── Payment ───────────────────────────────────────────────────────────────────
 export const paymentApi = {
+  // checkout/page.tsx:94 appelle createCheckoutSession
+  createCheckoutSession: (orderId: number) =>
+    request('/payment/session', { method: 'POST', body: JSON.stringify({ order_id: orderId }) }, true),
   createSession: (orderId: number) =>
     request('/payment/session', { method: 'POST', body: JSON.stringify({ order_id: orderId }) }, true),
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ADMIN APIs
-// Chaque méthode correspond exactement aux appels dans les pages admin/
 // ─────────────────────────────────────────────────────────────────────────────
 
-// admin/orders/page.tsx utilise :
-//   adminOrderApi.list(limit, offset)
-//   adminOrderApi.update(id, { status?, payment_status? })
+// admin/orders/page.tsx : list(limit, offset) + update(id, patch)
 export const adminOrderApi = {
   list: (limit = 50, offset = 0) =>
     request(`/admin/orders${qs({ limit, offset })}`, {}, true),
@@ -145,11 +164,7 @@ export const adminOrderApi = {
     request(`/admin/orders/${id}`, { method: 'PATCH', body: JSON.stringify(data) }, true),
 }
 
-// admin/products/page.tsx utilise :
-//   adminProductApi.list({ q?: string|undefined, limit?: number })
-//   adminProductApi.create(fd: FormData)
-//   adminProductApi.update(slug: string, fd: FormData)
-//   adminProductApi.softDelete(slug: string)
+// admin/products/page.tsx : list(params) + create(fd) + update(slug, fd) + softDelete(slug)
 export const adminProductApi = {
   list: (params?: { q?: string | null | undefined; limit?: number; offset?: number; is_active?: boolean }) =>
     request(`/admin/products${qs(params || {})}`, {}, true),
@@ -159,9 +174,7 @@ export const adminProductApi = {
   softDelete: (slug: string) => request(`/admin/products/${slug}`, { method: 'DELETE' }, true),
 }
 
-// admin/inventory/page.tsx utilise :
-//   adminInventoryApi.setStock(id: number, qty: number | null)
-//   (uses adminProductApi.list too, already above)
+// admin/inventory/page.tsx : setStock(id, qty | null)
 export const adminInventoryApi = {
   setStock: (productId: number, qty: number | null) =>
     request(
