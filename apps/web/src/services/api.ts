@@ -166,34 +166,40 @@ export const inventoryApi = {
 
 // ── Admin aliases (backward-compatible exports) ───────────────────────────────
 export const adminOrderApi = {
-  list: (params?: Record<string, string | number>) => {
-    const q = params ? '?' + new URLSearchParams(Object.fromEntries(Object.entries(params).map(([k,v]) => [k, String(v)]))).toString() : ''
+  list: (limit?: number, offset?: number) => {
+    const q = (limit != null || offset != null)
+      ? '?' + new URLSearchParams({
+          ...(limit != null ? { limit: String(limit) } : {}),
+          ...(offset != null ? { offset: String(offset) } : {}),
+        }).toString()
+      : ''
     return request(`/admin/orders${q}`, {}, true)
   },
+  update: (id: number, data: unknown) =>
+    request(`/orders/${id}`, { method: 'PATCH', body: JSON.stringify(data) }, true),
   updateStatus: (id: number, status: string) =>
-    request(`/orders/${id}/status`, {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
-    }, true),
+    request(`/orders/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }, true),
   updatePayment: (id: number, status: string) =>
-    request(`/orders/${id}/payment`, {
-      method: 'PUT',
-      body: JSON.stringify({ payment_status: status }),
-    }, true),
+    request(`/orders/${id}/payment`, { method: 'PUT', body: JSON.stringify({ payment_status: status }) }, true),
 }
 
 export const adminProductApi = {
-  list: (params?: Record<string, string | number>) => {
-    const q = params ? '?' + new URLSearchParams(Object.fromEntries(Object.entries(params).map(([k,v]) => [k, String(v)]))).toString() : ''
+  list: (params?: Record<string, string | number | undefined>) => {
+    const clean = Object.fromEntries(
+      Object.entries(params || {}).filter(([, v]) => v != null).map(([k, v]) => [k, String(v)])
+    )
+    const q = Object.keys(clean).length ? '?' + new URLSearchParams(clean).toString() : ''
     return request(`/products${q}`, {}, true)
   },
   get: (slug: string) => request(`/products/${slug}`, {}, true),
   create: (data: unknown) =>
     request('/products', { method: 'POST', body: JSON.stringify(data) }, true),
-  update: (id: number, data: unknown) =>
-    request(`/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }, true),
+  update: (slugOrId: string | number, data: unknown) =>
+    request(`/products/${slugOrId}`, { method: 'PUT', body: JSON.stringify(data) }, true),
   delete: (id: number) =>
     request(`/products/${id}`, { method: 'DELETE' }, true),
+  softDelete: (slug: string) =>
+    request(`/products/${slug}`, { method: 'DELETE' }, true),
   uploadImage: async (productId: number, file: File) => {
     const fd = new FormData()
     fd.append('file', file)
@@ -210,6 +216,11 @@ export const adminProductApi = {
 
 export const adminInventoryApi = {
   list: () => request('/admin/inventory', {}, true),
+  setStock: (productId: number, qty: number) =>
+    request(`/admin/inventory/${productId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ stock_qty: qty }),
+    }, true),
   update: (productId: number, qty: number) =>
     request(`/admin/inventory/${productId}`, {
       method: 'PUT',
