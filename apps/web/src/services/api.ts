@@ -157,7 +157,7 @@ export const cartApi = {
   addItem: (product_id: number, quantity: number) =>
     request('/cart/items', { method: 'POST', body: JSON.stringify({ product_id, quantity }) }, true),
   updateItem: (item_id: number, quantity: number) =>
-    request(`/cart/items/${item_id}`, { method: 'PUT', body: JSON.stringify({ quantity }) }, true),
+    request(`/cart/items/${item_id}`, { method: 'PATCH', body: JSON.stringify({ quantity }) }, true),
   deleteItem: (item_id: number) =>
     request(`/cart/items/${item_id}`, { method: 'DELETE' }, true),
   removeItem: (item_id: number) =>

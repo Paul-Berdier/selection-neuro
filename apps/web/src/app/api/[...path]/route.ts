@@ -7,23 +7,53 @@ async function proxy(req: NextRequest): Promise<NextResponse> {
   const backendPath = pathname.replace(/^\/api/, '')
   const url = `${API_URL}${backendPath}${search}`
 
-  const headers = new Headers(req.headers)
-  headers.delete('host')
+  // Construire les headers proprement
+  const headers = new Headers()
+  req.headers.forEach((value, key) => {
+    // Exclure les headers qui posent problème
+    if (!['host', 'connection', 'transfer-encoding'].includes(key.toLowerCase())) {
+      headers.set(key, value)
+    }
+  })
+
+  // S'assurer que Content-Type est bien présent pour les requêtes avec body
+  const isBodyMethod = !['GET', 'HEAD'].includes(req.method)
+  if (isBodyMethod && !headers.has('content-type')) {
+    headers.set('content-type', 'application/json')
+  }
 
   try {
+    let body: BodyInit | undefined
+    if (isBodyMethod) {
+      const contentType = headers.get('content-type') || ''
+      if (contentType.includes('multipart/form-data')) {
+        // FormData — laisser fetch gérer le boundary
+        headers.delete('content-type')
+        body = await req.formData()
+      } else {
+        body = await req.text()
+      }
+    }
+
     const res = await fetch(url, {
       method: req.method,
       headers,
-      body: ['GET', 'HEAD'].includes(req.method) ? undefined : req.body,
-      // @ts-ignore
-      duplex: 'half',
+      body,
+    })
+
+    const resHeaders = new Headers()
+    res.headers.forEach((value, key) => {
+      if (!['transfer-encoding', 'connection'].includes(key.toLowerCase())) {
+        resHeaders.set(key, value)
+      }
     })
 
     return new NextResponse(res.body, {
       status: res.status,
-      headers: new Headers(res.headers),
+      headers: resHeaders,
     })
-  } catch {
+  } catch (err) {
+    console.error('Proxy error:', err)
     return NextResponse.json({ error: 'Backend unreachable' }, { status: 502 })
   }
 }
