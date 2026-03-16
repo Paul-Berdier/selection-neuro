@@ -27,7 +27,7 @@ function ProductCard({ product }: { product: Product }) {
     <Link href={`/products/${product.slug}`} className={styles.card}>
       <div className={styles.cardImage}>
         {product.image_url ? (
-          <img src={`${''}${product.image_url}`} alt={product.name} />
+          <img src={`/api${product.image_url}`} alt={product.name} />
         ) : (
           <div className={styles.imagePlaceholder}>
             <span>◆</span>
