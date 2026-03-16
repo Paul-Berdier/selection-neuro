@@ -1,6 +1,6 @@
-# Élixir — Next.js Frontend
+# Sélection neuro — Next.js Frontend
 
-Premium e-commerce frontend for the Élixir supplement store.
+Premium e-commerce frontend for the Sélection neuro supplement store.
 
 ## Setup
 

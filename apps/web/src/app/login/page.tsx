@@ -36,9 +36,9 @@ function LoginContent() {
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        <div className={styles.logo}>◆ Élixir</div>
-        <h1 className={styles.title}>Welcome back</h1>
-        <p className={styles.subtitle}>Sign in to your account</p>
+        <div className={styles.logo}>Selection Neuro</div>
+        <h1 className={styles.title}>Bon retour</h1>
+        <p className={styles.subtitle}>Connexion au compte</p>
 
         <div className={styles.form}>
           <div className="form-group">
@@ -54,7 +54,7 @@ function LoginContent() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Password</label>
+            <label className="form-label">Mot de passe</label>
             <input
               className="input"
               type="password"
@@ -72,7 +72,7 @@ function LoginContent() {
             onClick={handleSubmit}
             disabled={loading || !email || !password}
           >
-            {loading ? 'Signing in…' : 'Connexion'}
+            {loading ? 'Inscription…' : 'Connexion'}
           </button>
         </div>
 
@@ -91,9 +91,9 @@ function LoginFallback() {
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        <div className={styles.logo}>◆ Élixir</div>
-        <h1 className={styles.title}>Welcome back</h1>
-        <p className={styles.subtitle}>Loading…</p>
+        <div className={styles.logo}>Sélection neuro</div>
+        <h1 className={styles.title}>Bon retour</h1>
+        <p className={styles.subtitle}>Chargement…</p>
       </div>
     </div>
   )

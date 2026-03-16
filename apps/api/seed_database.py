@@ -1,5 +1,5 @@
 """
-seed_database.py – Sélection Neuro / Élixir
+seed_database.py – Sélection Neuro
 ============================================
 Remplit toutes les tables de la DB Postgres Railway à partir des données
 réelles du Notion (produits, études, bienfaits, stacks).

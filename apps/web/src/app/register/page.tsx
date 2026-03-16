@@ -15,7 +15,7 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
 
   const handleSubmit = async () => {
-    if (password !== confirm) { setError('Passwords do not match'); return }
+    if (password !== confirm) { setError("Le mots de passe n'est pas bon"); return }
     setLoading(true)
     setError('')
     try {
@@ -30,9 +30,9 @@ export default function RegisterPage() {
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        <div className={styles.logo}>◆ Élixir</div>
-        <h1 className={styles.title}>Create account</h1>
-        <p className={styles.subtitle}>Join Élixir today</p>
+        <div className={styles.logo}>Selection neuro</div>
+        <h1 className={styles.title}>Créer un compte</h1>
+        <p className={styles.subtitle}>Rejoindre Selection neuro</p>
 
         <div className={styles.form}>
           <div className="form-group">
@@ -41,7 +41,7 @@ export default function RegisterPage() {
           </div>
           <div className="form-group">
             <label className="form-label">Password</label>
-            <input className="input" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" />
+            <input className="input" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Au moins 8 caractéres" />
           </div>
           <div className="form-group">
             <label className="form-label">Confirm Password</label>
@@ -55,13 +55,13 @@ export default function RegisterPage() {
             onClick={handleSubmit}
             disabled={loading || !email || !password || !confirm}
           >
-            {loading ? 'Creating account…' : 'Create Account'}
+            {loading ? 'Création du compte…' : 'Créer le compte'}
           </button>
         </div>
 
         <p className={styles.footer}>
           Already have an account?{' '}
-          <Link href="/login" className="text-accent">Sign in</Link>
+          <Link href="/login" className="text-accent">Connexion</Link>
         </p>
       </div>
     </div>
