@@ -13,6 +13,7 @@ router = APIRouter(prefix="/products", tags=["products"])
 def to_product_out(p) -> ProductOut:
     price = getattr(p, "price_month_eur", None)
     return ProductOut(
+        id=p.id,                          # ← ajouter
         slug=p.slug,
         name=p.name,
         short_desc=getattr(p, "short_desc", "") or "",
