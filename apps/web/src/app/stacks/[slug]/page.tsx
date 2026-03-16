@@ -30,8 +30,8 @@ export default function StackDetailPage() {
 
   if (!stack) return (
     <div className="container" style={{ paddingTop: 80, textAlign: 'center' }}>
-      <p className="text-muted">Stack not found.</p>
-      <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={() => router.push('/stacks')}>Back</button>
+      <p className="text-muted">Stack introuvable.</p>
+      <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={() => router.push('/stacks')}>Retour</button>
     </div>
   )
 
@@ -49,7 +49,7 @@ export default function StackDetailPage() {
       <div className="container" style={{ paddingBottom: 80 }}>
         <div className={styles.layout}>
           <div className={styles.products}>
-            <h2 className={styles.sectionTitle}>Products in this stack</h2>
+            <h2 className={styles.sectionTitle}>Produits de ce stack</h2>
             {stack.products.map(sp => (
               <div key={sp.product_slug} className={styles.productCard}>
                 <div className={styles.productInfo}>
@@ -76,7 +76,7 @@ export default function StackDetailPage() {
           {stack.description && (
             <div className={styles.sidebar}>
               <div className="card">
-                <div className="card-header"><h3>About this Stack</h3></div>
+                <div className="card-header"><h3>À propos de ce stack</h3></div>
                 <div className="card-body">
                   <pre className={styles.descText}>{stack.description}</pre>
                 </div>

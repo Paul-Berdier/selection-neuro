@@ -9,7 +9,6 @@ import styles from './page.module.css'
 
 type Step = 'address' | 'shipping' | 'payment'
 
-// ─── Wrapper with Suspense (required for useSearchParams in Next.js 14) ───────
 export default function CheckoutPage() {
   return (
     <Suspense
@@ -24,7 +23,6 @@ export default function CheckoutPage() {
   )
 }
 
-// ─── Actual checkout logic ────────────────────────────────────────────────────
 function CheckoutContent() {
   const params = useSearchParams()
   const router = useRouter()
@@ -62,7 +60,7 @@ function CheckoutContent() {
   }
 
   const handleAddressSubmit = async () => {
-    if (!selectedShipping) { setError('Please select a shipping address'); return }
+    if (!selectedShipping) { setError('Veuillez sélectionner une adresse de livraison'); return }
     setSubmitting(true)
     setError('')
     try {
@@ -75,7 +73,7 @@ function CheckoutContent() {
   }
 
   const handleShippingSubmit = async () => {
-    if (!selectedShippingMethod) { setError('Please select a shipping method'); return }
+    if (!selectedShippingMethod) { setError('Veuillez sélectionner un mode de livraison'); return }
     setSubmitting(true)
     setError('')
     try {
@@ -110,16 +108,15 @@ function CheckoutContent() {
   )
 
   const steps: { key: Step; label: string }[] = [
-    { key: 'address', label: 'Address' },
-    { key: 'shipping', label: 'Shipping' },
-    { key: 'payment', label: 'Payment' },
+    { key: 'address', label: 'Adresse' },
+    { key: 'shipping', label: 'Livraison' },
+    { key: 'payment', label: 'Paiement' },
   ]
 
   return (
     <div className="container" style={{ paddingTop: 60, paddingBottom: 80 }}>
-      <h1 className={styles.title}>Checkout</h1>
+      <h1 className={styles.title}>Commande</h1>
 
-      {/* Steps indicator */}
       <div className={styles.steps}>
         {steps.map((s, i) => (
           <div
@@ -137,11 +134,10 @@ function CheckoutContent() {
       <div className={styles.layout}>
         <div className={styles.main}>
 
-          {/* ── Step 1: Address ─────────────────────────────── */}
           {step === 'address' && (
             <div className="card animate-in">
               <div className="card-header">
-                <h3>Shipping Address</h3>
+                <h3>Adresse de livraison</h3>
               </div>
               <div className="card-body">
                 {addresses.map(a => (
@@ -175,14 +171,14 @@ function CheckoutContent() {
                     style={{ marginTop: 12 }}
                     onClick={() => setShowAddressForm(true)}
                   >
-                    + Add new address
+                    + Ajouter une adresse
                   </button>
                 )}
 
                 <div className="divider" />
 
                 <h3 style={{ marginBottom: 16, fontFamily: 'var(--font-display)', fontWeight: 400 }}>
-                  Billing Address
+                  Adresse de facturation
                 </h3>
 
                 <label className={`${styles.addressOption} ${selectedBilling === null ? styles.addressSelected : ''}`}>
@@ -192,7 +188,7 @@ function CheckoutContent() {
                     checked={selectedBilling === null}
                     onChange={() => setSelectedBilling(null)}
                   />
-                  <span>Same as shipping address</span>
+                  <span>Identique à l&apos;adresse de livraison</span>
                 </label>
 
                 {addresses.map(a => (
@@ -220,16 +216,15 @@ function CheckoutContent() {
                   onClick={handleAddressSubmit}
                   disabled={submitting || !selectedShipping}
                 >
-                  {submitting ? 'Saving…' : 'Continue to Shipping'}
+                  {submitting ? 'Enregistrement…' : 'Continuer vers la livraison'}
                 </button>
               </div>
             </div>
           )}
 
-          {/* ── Step 2: Shipping ─────────────────────────────── */}
           {step === 'shipping' && (
             <div className="card animate-in">
-              <div className="card-header"><h3>Shipping Method</h3></div>
+              <div className="card-header"><h3>Mode de livraison</h3></div>
               <div className="card-body">
                 {shippingRates.map(r => (
                   <label
@@ -247,14 +242,14 @@ function CheckoutContent() {
                     </div>
                     <span className={styles.shippingPrice}>
                       {r.amount === 0
-                        ? <span className="text-success">Free</span>
+                        ? <span className="text-success">Gratuit</span>
                         : `€${r.amount.toFixed(2)}`}
                     </span>
                   </label>
                 ))}
               </div>
               <div className="card-footer" style={{ display: 'flex', gap: 10 }}>
-                <button className="btn btn-ghost" onClick={() => setStep('address')}>← Back</button>
+                <button className="btn btn-ghost" onClick={() => setStep('address')}>← Retour</button>
                 {error && <p className="text-error" style={{ fontSize: 13 }}>{error}</p>}
                 <button
                   className="btn btn-primary"
@@ -262,16 +257,15 @@ function CheckoutContent() {
                   onClick={handleShippingSubmit}
                   disabled={submitting}
                 >
-                  {submitting ? 'Saving…' : 'Continue to Payment'}
+                  {submitting ? 'Enregistrement…' : 'Continuer vers le paiement'}
                 </button>
               </div>
             </div>
           )}
 
-          {/* ── Step 3: Payment ──────────────────────────────── */}
           {step === 'payment' && (
             <div className="card animate-in">
-              <div className="card-header"><h3>Payment</h3></div>
+              <div className="card-header"><h3>Paiement</h3></div>
               <div className="card-body">
                 <div className={styles.paymentInfo}>
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" style={{ color: 'var(--accent)' }}>
@@ -279,13 +273,13 @@ function CheckoutContent() {
                     <line x1="1" y1="10" x2="23" y2="10"/>
                   </svg>
                   <div>
-                    <p style={{ color: 'var(--text)', fontWeight: 500 }}>Secure payment via Stripe</p>
-                    <p style={{ fontSize: 13 }}>You&apos;ll be redirected to complete your payment securely.</p>
+                    <p style={{ color: 'var(--text)', fontWeight: 500 }}>Paiement sécurisé via Stripe</p>
+                    <p style={{ fontSize: 13 }}>Vous serez redirigé pour finaliser votre paiement en toute sécurité.</p>
                   </div>
                 </div>
               </div>
               <div className="card-footer" style={{ display: 'flex', gap: 10 }}>
-                <button className="btn btn-ghost" onClick={() => setStep('shipping')}>← Back</button>
+                <button className="btn btn-ghost" onClick={() => setStep('shipping')}>← Retour</button>
                 {error && <p className="text-error" style={{ fontSize: 13 }}>{error}</p>}
                 <button
                   className="btn btn-primary"
@@ -293,19 +287,18 @@ function CheckoutContent() {
                   onClick={handlePayment}
                   disabled={submitting}
                 >
-                  {submitting ? 'Redirecting…' : `Pay €${order?.grand_total_amount?.toFixed(2) ?? '—'}`}
+                  {submitting ? 'Redirection…' : `Payer €${order?.grand_total_amount?.toFixed(2) ?? '—'}`}
                 </button>
               </div>
             </div>
           )}
         </div>
 
-        {/* ── Order Summary Sidebar ────────────────────────── */}
         {order && (
           <div className={styles.sidebar}>
             <div className="card">
               <div className="card-header">
-                <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}>Order #{order.id}</h3>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}>Commande #{order.id}</h3>
               </div>
               <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {order.items.map(it => (
@@ -316,23 +309,11 @@ function CheckoutContent() {
                   </div>
                 ))}
                 <div className="divider" style={{ margin: '4px 0' }} />
-                <div className={styles.orderSummaryRow}>
-                  <span>Subtotal</span>
-                  <span>€{order.subtotal_amount?.toFixed(2)}</span>
-                </div>
-                <div className={styles.orderSummaryRow}>
-                  <span>Shipping</span>
-                  <span>{order.shipping_amount ? `€${order.shipping_amount.toFixed(2)}` : '—'}</span>
-                </div>
-                <div className={styles.orderSummaryRow}>
-                  <span>Tax</span>
-                  <span>{order.tax_amount ? `€${order.tax_amount.toFixed(2)}` : '—'}</span>
-                </div>
+                <div className={styles.orderSummaryRow}><span>Sous-total</span><span>€{order.subtotal_amount?.toFixed(2)}</span></div>
+                <div className={styles.orderSummaryRow}><span>Livraison</span><span>{order.shipping_amount ? `€${order.shipping_amount.toFixed(2)}` : '—'}</span></div>
+                <div className={styles.orderSummaryRow}><span>TVA</span><span>{order.tax_amount ? `€${order.tax_amount.toFixed(2)}` : '—'}</span></div>
                 <div className="divider" style={{ margin: '4px 0' }} />
-                <div className={styles.orderTotal}>
-                  <span>Total</span>
-                  <span>€{order.grand_total_amount?.toFixed(2)}</span>
-                </div>
+                <div className={styles.orderTotal}><span>Total</span><span>€{order.grand_total_amount?.toFixed(2)}</span></div>
               </div>
             </div>
           </div>

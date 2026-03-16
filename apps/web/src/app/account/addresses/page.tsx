@@ -26,17 +26,17 @@ export default function AddressesPage() {
     <div className="container-sm" style={{ paddingTop: 60, paddingBottom: 80 }}>
       <div className={styles.header}>
         <div>
-          <h1 className="page-title">Addresses</h1>
-          <p className="page-subtitle">Manage your saved addresses</p>
+          <h1 className="page-title">Mes adresses</h1>
+          <p className="page-subtitle">Gérez vos adresses enregistrées</p>
         </div>
         <button className="btn btn-secondary" onClick={() => { setCreating(true); setEditing(null) }}>
-          + Add Address
+          + Ajouter une adresse
         </button>
       </div>
 
       {creating && (
         <div className="card" style={{ marginBottom: 24 }}>
-          <div className="card-header"><h3>New Address</h3></div>
+          <div className="card-header"><h3>Nouvelle adresse</h3></div>
           <div className="card-body">
             <AddressForm
               onSuccess={a => { setAddresses(prev => [a, ...prev]); setCreating(false) }}
@@ -54,8 +54,8 @@ export default function AddressesPage() {
         </div>
       ) : addresses.length === 0 && !creating ? (
         <div className={styles.empty}>
-          <p>No addresses saved yet.</p>
-          <button className="btn btn-primary" onClick={() => setCreating(true)}>Add your first address</button>
+          <p>Aucune adresse enregistrée.</p>
+          <button className="btn btn-primary" onClick={() => setCreating(true)}>Ajouter une adresse</button>
         </div>
       ) : (
         <div className={styles.list}>
@@ -63,7 +63,7 @@ export default function AddressesPage() {
             <div key={a.id} className="card">
               {editing?.id === a.id ? (
                 <>
-                  <div className="card-header"><h3>Edit Address</h3></div>
+                  <div className="card-header"><h3>Modifier l&apos;adresse</h3></div>
                   <div className="card-body">
                     <AddressForm
                       initial={a}
@@ -84,13 +84,13 @@ export default function AddressesPage() {
                         {a.phone && <p className={styles.addressLines}>{a.phone}</p>}
                       </div>
                       <div className={styles.addressActions}>
-                        <button className="btn btn-secondary btn-sm" onClick={() => setEditing(a)}>Edit</button>
+                        <button className="btn btn-secondary btn-sm" onClick={() => setEditing(a)}>Modifier</button>
                         <button
                           className="btn btn-danger btn-sm"
                           onClick={() => handleDelete(a.id)}
                           disabled={deleting === a.id}
                         >
-                          {deleting === a.id ? '…' : 'Delete'}
+                          {deleting === a.id ? '…' : 'Supprimer'}
                         </button>
                       </div>
                     </div>

@@ -49,40 +49,40 @@ export default function AddressForm({ initial, onSuccess, onCancel }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div className="form-group">
-        <label className="form-label">Label (e.g. Home, Office)</label>
-        <input className="input" value={form.label} onChange={set('label')} placeholder="Home" />
+        <label className="form-label">Libellé (ex. Domicile, Bureau)</label>
+        <input className="input" value={form.label} onChange={set('label')} placeholder="Domicile" />
       </div>
       <div className="form-group">
-        <label className="form-label">Full Name</label>
-        <input className="input" value={form.full_name} onChange={set('full_name')} placeholder="Jane Doe" />
+        <label className="form-label">Nom complet</label>
+        <input className="input" value={form.full_name} onChange={set('full_name')} placeholder="Jean Dupont" />
       </div>
       <div className="form-group">
-        <label className="form-label">Address Line 1</label>
+        <label className="form-label">Adresse ligne 1</label>
         <input className="input" value={form.line1} onChange={set('line1')} placeholder="123 rue de la Paix" />
       </div>
       <div className="form-group">
-        <label className="form-label">Address Line 2 (optional)</label>
-        <input className="input" value={form.line2} onChange={set('line2')} placeholder="Apt, Suite, etc." />
+        <label className="form-label">Adresse ligne 2 (optionnel)</label>
+        <input className="input" value={form.line2} onChange={set('line2')} placeholder="Apt, Bâtiment, etc." />
       </div>
       <div className="form-grid">
         <div className="form-group">
-          <label className="form-label">City</label>
+          <label className="form-label">Ville</label>
           <input className="input" value={form.city} onChange={set('city')} placeholder="Paris" />
         </div>
         <div className="form-group">
-          <label className="form-label">Postal Code</label>
+          <label className="form-label">Code postal</label>
           <input className="input" value={form.postal_code} onChange={set('postal_code')} placeholder="75001" />
         </div>
       </div>
       <div className="form-grid">
         <div className="form-group">
-          <label className="form-label">Country</label>
+          <label className="form-label">Pays</label>
           <select className="select" value={form.country} onChange={set('country')}>
             {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         <div className="form-group">
-          <label className="form-label">Phone (optional)</label>
+          <label className="form-label">Téléphone (optionnel)</label>
           <input className="input" value={form.phone} onChange={set('phone')} placeholder="+33 6 00 00 00 00" />
         </div>
       </div>
@@ -91,14 +91,14 @@ export default function AddressForm({ initial, onSuccess, onCancel }: Props) {
 
       <div style={{ display: 'flex', gap: 10 }}>
         {onCancel && (
-          <button className="btn btn-ghost" onClick={onCancel} type="button">Cancel</button>
+          <button className="btn btn-ghost" onClick={onCancel} type="button">Annuler</button>
         )}
         <button
           className="btn btn-primary"
           onClick={handleSubmit}
           disabled={loading || !form.label || !form.full_name || !form.line1 || !form.city || !form.postal_code}
         >
-          {loading ? 'Saving…' : initial ? 'Update Address' : 'Save Address'}
+          {loading ? 'Enregistrement…' : initial ? 'Modifier l\'adresse' : 'Enregistrer l\'adresse'}
         </button>
       </div>
     </div>

@@ -15,7 +15,7 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
 
   const handleSubmit = async () => {
-    if (password !== confirm) { setError("Le mots de passe n'est pas bon"); return }
+    if (password !== confirm) { setError('Les mots de passe ne correspondent pas'); return }
     setLoading(true)
     setError('')
     try {
@@ -30,21 +30,21 @@ export default function RegisterPage() {
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        <div className={styles.logo}>Selection neuro</div>
+        <div className={styles.logo}>Sélection Neuro</div>
         <h1 className={styles.title}>Créer un compte</h1>
-        <p className={styles.subtitle}>Rejoindre Selection neuro</p>
+        <p className={styles.subtitle}>Rejoindre Sélection Neuro</p>
 
         <div className={styles.form}>
           <div className="form-group">
             <label className="form-label">Email</label>
-            <input className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
+            <input className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="vous@exemple.com" />
           </div>
           <div className="form-group">
-            <label className="form-label">Password</label>
-            <input className="input" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Au moins 8 caractéres" />
+            <label className="form-label">Mot de passe</label>
+            <input className="input" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Au moins 8 caractères" />
           </div>
           <div className="form-group">
-            <label className="form-label">Confirm Password</label>
+            <label className="form-label">Confirmer le mot de passe</label>
             <input className="input" type="password" value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="••••••••" onKeyDown={e => e.key === 'Enter' && handleSubmit()} />
           </div>
 
@@ -60,8 +60,8 @@ export default function RegisterPage() {
         </div>
 
         <p className={styles.footer}>
-          Already have an account?{' '}
-          <Link href="/login" className="text-accent">Connexion</Link>
+          Déjà un compte ?{' '}
+          <Link href="/login" className="text-accent">Se connecter</Link>
         </p>
       </div>
     </div>

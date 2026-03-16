@@ -37,7 +37,7 @@ export default function AdminInventoryPage() {
     const val = editing[p.id]
     const qty = val === '' ? null : parseInt(val)
     if (val !== '' && (isNaN(qty!) || qty! < 0)) {
-      setError(prev => ({ ...prev, [p.id]: 'Invalid quantity' }))
+      setError(prev => ({ ...prev, [p.id]: 'Quantité invalide' }))
       return
     }
     setSaving(p.id)
@@ -63,30 +63,30 @@ export default function AdminInventoryPage() {
     <div>
       <div className={styles.pageHeader}>
         <div>
-          <h1 className={styles.pageTitle}>Inventory</h1>
-          <p className={styles.pageSubtitle}>Manage stock levels</p>
+          <h1 className={styles.pageTitle}>Inventaire</h1>
+          <p className={styles.pageSubtitle}>Gérer les niveaux de stock</p>
         </div>
       </div>
 
       <div className={styles.toolbar}>
         <input
           className={`input ${styles.searchInput}`}
-          placeholder="Search products…"
+          placeholder="Rechercher un produit…"
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
         <div className={styles.stats}>
           <span className={styles.stat}>
             <span className="badge badge-error">{products.filter(p => p.stock_qty === 0).length}</span>
-            Out of stock
+            Rupture de stock
           </span>
           <span className={styles.stat}>
             <span className="badge badge-warning">{products.filter(p => p.stock_qty !== null && p.stock_qty > 0 && p.stock_qty <= 5).length}</span>
-            Low stock (≤5)
+            Stock faible (≤5)
           </span>
           <span className={styles.stat}>
             <span className="badge badge-muted">{products.filter(p => p.stock_qty === null).length}</span>
-            Unlimited
+            Illimité
           </span>
         </div>
       </div>
@@ -95,16 +95,16 @@ export default function AdminInventoryPage() {
         <table>
           <thead>
             <tr>
-              <th>Product</th>
-              <th>Category</th>
-              <th>Status</th>
+              <th>Produit</th>
+              <th>Catégorie</th>
+              <th>Statut</th>
               <th>Stock</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5} style={{ textAlign: 'center', padding: 40, color: 'var(--text-3)' }}>Loading…</td></tr>
+              <tr><td colSpan={5} style={{ textAlign: 'center', padding: 40, color: 'var(--text-3)' }}>Chargement…</td></tr>
             ) : filtered.map(p => (
               <tr key={p.id}>
                 <td>
@@ -116,7 +116,7 @@ export default function AdminInventoryPage() {
                 <td>{p.category || '—'}</td>
                 <td>
                   <span className={`badge ${p.is_active ? 'badge-success' : 'badge-muted'}`}>
-                    {p.is_active ? 'Active' : 'Inactive'}
+                    {p.is_active ? 'Actif' : 'Inactif'}
                   </span>
                 </td>
                 <td>
@@ -136,7 +136,7 @@ export default function AdminInventoryPage() {
                     </div>
                   ) : (
                     <span className={`${styles.stockValue} ${p.stock_qty === 0 ? styles.stockOut : p.stock_qty !== null && p.stock_qty <= 5 ? styles.stockLow : ''}`}>
-                      {p.stock_qty === null ? <span style={{ color: 'var(--text-3)' }}>∞ Unlimited</span> : p.stock_qty}
+                      {p.stock_qty === null ? <span style={{ color: 'var(--text-3)' }}>∞ Illimité</span> : p.stock_qty}
                     </span>
                   )}
                 </td>
@@ -144,15 +144,15 @@ export default function AdminInventoryPage() {
                   {editing[p.id] !== undefined ? (
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button className="btn btn-primary btn-sm" onClick={() => handleSave(p)} disabled={saving === p.id}>
-                        {saving === p.id ? '…' : saved === p.id ? '✓' : 'Save'}
+                        {saving === p.id ? '…' : saved === p.id ? '✓' : 'Enregistrer'}
                       </button>
                       <button className="btn btn-ghost btn-sm" onClick={() => setEditing(prev => { const n = { ...prev }; delete n[p.id]; return n })}>
-                        Cancel
+                        Annuler
                       </button>
                     </div>
                   ) : (
                     <button className="btn btn-secondary btn-sm" onClick={() => startEdit(p)}>
-                      Edit
+                      Modifier
                     </button>
                   )}
                 </td>

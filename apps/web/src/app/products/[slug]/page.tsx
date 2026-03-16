@@ -118,7 +118,7 @@ export default function ProductDetailPage() {
               onClick={handleAdd}
               disabled={adding || added}
             >
-              {added ? '✓ ✓ Ajouté au panier' : adding ? 'Ajout en cours…' : 'Ajouter au panier'}
+              {added ? '✓ Ajouté au panier' : adding ? 'Ajout en cours…' : 'Ajouter au panier'}
             </button>
           </div>
 

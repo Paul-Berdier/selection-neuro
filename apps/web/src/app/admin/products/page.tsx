@@ -16,8 +16,6 @@ interface AdminProduct {
   is_active: boolean
 }
 
-
-
 function ProductForm({ initial, onSuccess, onCancel }: {
   initial?: AdminProduct
   onSuccess: () => void
@@ -71,7 +69,7 @@ function ProductForm({ initial, onSuccess, onCancel }: {
       }
       onSuccess()
     } catch (e: any) {
-      setError(e.message || 'Failed to save product')
+      setError(e.message || 'Erreur lors de la sauvegarde')
     }
     setLoading(false)
   }
@@ -80,25 +78,25 @@ function ProductForm({ initial, onSuccess, onCancel }: {
     <div className={styles.form}>
       <div className="form-grid">
         <div className="form-group">
-          <label className="form-label">Name *</label>
+          <label className="form-label">Nom *</label>
           <input className="input" value={name} onChange={e => setName(e.target.value)} />
         </div>
         <div className="form-group">
-          <label className="form-label">Slug {!initial && '(auto if empty)'}</label>
+          <label className="form-label">Slug {!initial && '(auto si vide)'}</label>
           <input className="input" value={slug} onChange={e => setSlug(e.target.value)} disabled={!!initial} />
         </div>
       </div>
       <div className="form-group">
-        <label className="form-label">Short Description</label>
+        <label className="form-label">Description courte</label>
         <input className="input" value={shortDesc} onChange={e => setShortDesc(e.target.value)} />
       </div>
       <div className="form-grid">
         <div className="form-group">
-          <label className="form-label">Category</label>
-          <input className="input" value={category} onChange={e => setCategory(e.target.value)} placeholder="Sleep, Focus, Recovery…" />
+          <label className="form-label">Catégorie</label>
+          <input className="input" value={category} onChange={e => setCategory(e.target.value)} placeholder="Sommeil, Focus, Récupération…" />
         </div>
         <div className="form-group">
-          <label className="form-label">Price €/month</label>
+          <label className="form-label">Prix €/mois</label>
           <input className="input" type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} placeholder="29.90" />
         </div>
       </div>
@@ -108,14 +106,14 @@ function ProductForm({ initial, onSuccess, onCancel }: {
       </div>
       <div className="form-grid">
         <div className="form-group">
-          <label className="form-label">Benefits (comma-separated)</label>
-          <input className="input" value={benefits} onChange={e => setBenefits(e.target.value)} placeholder="Improved sleep, Relaxation…" />
+          <label className="form-label">Bienfaits (séparés par virgule)</label>
+          <input className="input" value={benefits} onChange={e => setBenefits(e.target.value)} placeholder="Sommeil amélioré, Relaxation…" />
         </div>
         <div className="form-group">
-          <label className="form-label">Benefits Mode</label>
+          <label className="form-label">Mode bienfaits</label>
           <select className="select" value={benefitsMode} onChange={e => setBenefitsMode(e.target.value)}>
-            <option value="replace">Replace</option>
-            <option value="append">Append</option>
+            <option value="replace">Remplacer</option>
+            <option value="append">Ajouter</option>
           </select>
         </div>
       </div>
@@ -128,19 +126,19 @@ function ProductForm({ initial, onSuccess, onCancel }: {
           )}
           {image && <span className={styles.imageFilename}>{image.name}</span>}
           <button type="button" className="btn btn-secondary btn-sm" onClick={() => fileRef.current?.click()}>
-            {image || initial?.image_media_id ? 'Change Image' : 'Upload Image'}
+            {image || initial?.image_media_id ? 'Changer l\'image' : 'Uploader une image'}
           </button>
         </div>
       </div>
       <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <input type="checkbox" id="isActive" checked={isActive} onChange={e => setIsActive(e.target.checked)} />
-        <label htmlFor="isActive" className="form-label" style={{ margin: 0, cursor: 'pointer' }}>Active (visible in store)</label>
+        <label htmlFor="isActive" className="form-label" style={{ margin: 0, cursor: 'pointer' }}>Actif (visible dans la boutique)</label>
       </div>
       {error && <p className="text-error" style={{ fontSize: 13 }}>{error}</p>}
       <div style={{ display: 'flex', gap: 10 }}>
-        <button className="btn btn-ghost" onClick={onCancel} type="button">Cancel</button>
+        <button className="btn btn-ghost" onClick={onCancel} type="button">Annuler</button>
         <button className="btn btn-primary" onClick={handleSubmit} disabled={loading || !name}>
-          {loading ? 'Saving…' : initial ? 'Update Product' : 'Create Product'}
+          {loading ? 'Enregistrement…' : initial ? 'Mettre à jour' : 'Créer le produit'}
         </button>
       </div>
     </div>
@@ -168,7 +166,7 @@ export default function AdminProductsPage() {
   useEffect(() => { load() }, [search])
 
   const handleDelete = async (slug: string) => {
-    if (!confirm('Deactivate this product?')) return
+    if (!confirm('Désactiver ce produit ?')) return
     setDeleting(slug)
     try { await adminProductApi.softDelete(slug); load() }
     finally { setDeleting(null) }
@@ -178,17 +176,17 @@ export default function AdminProductsPage() {
     <div>
       <div className={styles.pageHeader}>
         <div>
-          <h1 className={styles.pageTitle}>Products</h1>
-          <p className={styles.pageSubtitle}>{total} products</p>
+          <h1 className={styles.pageTitle}>Produits</h1>
+          <p className={styles.pageSubtitle}>{total} produit{total !== 1 ? 's' : ''}</p>
         </div>
         <button className="btn btn-primary" onClick={() => { setCreating(true); setEditing(null) }}>
-          + New Product
+          + Nouveau produit
         </button>
       </div>
 
       {creating && (
         <div className="card" style={{ marginBottom: 24 }}>
-          <div className="card-header"><h3>Create Product</h3></div>
+          <div className="card-header"><h3>Créer un produit</h3></div>
           <div className="card-body">
             <ProductForm onSuccess={() => { setCreating(false); load() }} onCancel={() => setCreating(false)} />
           </div>
@@ -199,7 +197,7 @@ export default function AdminProductsPage() {
         <div className="card" style={{ marginBottom: 24 }}>
           <div className="card-header">
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <h3>Edit: {editing.name}</h3>
+              <h3>Modifier : {editing.name}</h3>
               <button className={styles.closeBtn} onClick={() => setEditing(null)}>×</button>
             </div>
           </div>
@@ -212,7 +210,7 @@ export default function AdminProductsPage() {
       <div className={styles.toolbar}>
         <input
           className={`input ${styles.searchInput}`}
-          placeholder="Search products…"
+          placeholder="Rechercher un produit…"
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
@@ -222,16 +220,16 @@ export default function AdminProductsPage() {
         <table>
           <thead>
             <tr>
-              <th>Product</th>
-              <th>Category</th>
-              <th>Price</th>
-              <th>Status</th>
+              <th>Produit</th>
+              <th>Catégorie</th>
+              <th>Prix</th>
+              <th>Statut</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5} style={{ textAlign: 'center', padding: 40, color: 'var(--text-3)' }}>Loading…</td></tr>
+              <tr><td colSpan={5} style={{ textAlign: 'center', padding: 40, color: 'var(--text-3)' }}>Chargement…</td></tr>
             ) : products.map(p => (
               <tr key={p.id}>
                 <td>
@@ -248,14 +246,14 @@ export default function AdminProductsPage() {
                   </div>
                 </td>
                 <td>{p.category || '—'}</td>
-                <td>{p.price_month_eur != null ? `€${p.price_month_eur.toFixed(2)}/mo` : '—'}</td>
-                <td><span className={`badge ${p.is_active ? 'badge-success' : 'badge-muted'}`}>{p.is_active ? 'Active' : 'Inactive'}</span></td>
+                <td>{p.price_month_eur != null ? `€${p.price_month_eur.toFixed(2)}/mois` : '—'}</td>
+                <td><span className={`badge ${p.is_active ? 'badge-success' : 'badge-muted'}`}>{p.is_active ? 'Actif' : 'Inactif'}</span></td>
                 <td>
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <button className="btn btn-secondary btn-sm" onClick={() => { setEditing(p); setCreating(false) }}>Edit</button>
+                    <button className="btn btn-secondary btn-sm" onClick={() => { setEditing(p); setCreating(false) }}>Modifier</button>
                     {p.is_active && (
                       <button className="btn btn-danger btn-sm" onClick={() => handleDelete(p.slug)} disabled={deleting === p.slug}>
-                        {deleting === p.slug ? '…' : 'Deactivate'}
+                        {deleting === p.slug ? '…' : 'Désactiver'}
                       </button>
                     )}
                   </div>

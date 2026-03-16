@@ -64,7 +64,7 @@ export default function CartPage() {
               </div>
               <div className={styles.itemInfo}>
                 <h3 className={styles.itemName}>{item.product_name}</h3>
-                <span className={styles.itemPrice}>€{item.unit_price.toFixed(2)}/mo</span>
+                <span className={styles.itemPrice}>€{item.unit_price.toFixed(2)}/mois</span>
               </div>
               <div className={styles.itemControls}>
                 <div className={styles.qtyWrap}>
@@ -94,7 +94,7 @@ export default function CartPage() {
                 <span>€{cart.subtotal.toFixed(2)}</span>
               </div>
               <div className={styles.summaryRow} style={{ color: 'var(--text-3)', fontSize: 12 }}>
-                <span>Livraison Livraison & taxes taxes</span>
+                <span>Livraison & taxes</span>
                 <span>calculé à la commande</span>
               </div>
               <div className="divider" style={{ margin: '4px 0' }} />

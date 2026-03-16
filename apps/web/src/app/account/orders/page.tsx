@@ -6,19 +6,19 @@ import { orderApi } from '@/services/api'
 import type { Order } from '@/types'
 import styles from './page.module.css'
 
-const STATUS_BADGE: Record<string, string> = {
-  created: 'badge-muted',
-  confirmed: 'badge-accent',
-  shipped: 'badge-accent',
-  delivered: 'badge-success',
-  canceled: 'badge-error',
-  refunded: 'badge-warning',
+const STATUS_LABEL: Record<string, string> = {
+  created: 'Créée', confirmed: 'Confirmée', shipped: 'Expédiée',
+  delivered: 'Livrée', canceled: 'Annulée', refunded: 'Remboursée',
 }
-
+const PAYMENT_LABEL: Record<string, string> = {
+  unpaid: 'Non payée', paid: 'Payée', refunded: 'Remboursée',
+}
+const STATUS_BADGE: Record<string, string> = {
+  created: 'badge-muted', confirmed: 'badge-accent', shipped: 'badge-accent',
+  delivered: 'badge-success', canceled: 'badge-error', refunded: 'badge-warning',
+}
 const PAYMENT_BADGE: Record<string, string> = {
-  unpaid: 'badge-warning',
-  paid: 'badge-success',
-  refunded: 'badge-error',
+  unpaid: 'badge-warning', paid: 'badge-success', refunded: 'badge-error',
 }
 
 export default function OrdersPage() {
@@ -32,8 +32,8 @@ export default function OrdersPage() {
 
   return (
     <div className="container" style={{ paddingTop: 60, paddingBottom: 80 }}>
-      <h1 className="page-title" style={{ marginBottom: 8 }}>My Orders</h1>
-      <p className="page-subtitle" style={{ marginBottom: 40 }}>Track and manage your orders</p>
+      <h1 className="page-title" style={{ marginBottom: 8 }}>Mes commandes</h1>
+      <p className="page-subtitle" style={{ marginBottom: 40 }}>Suivez et gérez vos commandes</p>
 
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -44,8 +44,8 @@ export default function OrdersPage() {
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
             <rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 10h8M8 14h5"/>
           </svg>
-          <p>No orders yet</p>
-          <Link href="/products" className="btn btn-primary">Start Shopping</Link>
+          <p>Aucune commande pour l&apos;instant</p>
+          <Link href="/products" className="btn btn-primary">Parcourir le catalogue</Link>
         </div>
       ) : (
         <div className={styles.layout}>
@@ -57,12 +57,12 @@ export default function OrdersPage() {
                 onClick={() => setSelected(selected?.id === o.id ? null : o)}
               >
                 <div className={styles.orderMeta}>
-                  <span className={styles.orderId}>Order #{o.id}</span>
+                  <span className={styles.orderId}>Commande #{o.id}</span>
                   <span className={styles.orderDate}>{o.created_at ? new Date(o.created_at).toLocaleDateString('fr-FR') : '—'}</span>
                 </div>
                 <div className={styles.orderBadges}>
-                  <span className={`badge ${STATUS_BADGE[o.status] || 'badge-muted'}`}>{o.status}</span>
-                  <span className={`badge ${PAYMENT_BADGE[o.payment_status] || 'badge-muted'}`}>{o.payment_status}</span>
+                  <span className={`badge ${STATUS_BADGE[o.status] || 'badge-muted'}`}>{STATUS_LABEL[o.status] || o.status}</span>
+                  <span className={`badge ${PAYMENT_BADGE[o.payment_status] || 'badge-muted'}`}>{PAYMENT_LABEL[o.payment_status] || o.payment_status}</span>
                 </div>
                 <span className={styles.orderAmount}>€{o.total_amount.toFixed(2)}</span>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--text-3)', transform: selected?.id === o.id ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>
@@ -76,10 +76,10 @@ export default function OrdersPage() {
             <div className={`card ${styles.orderDetail} animate-in`}>
               <div className="card-header">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}>Order #{selected.id}</h3>
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}>Commande #{selected.id}</h3>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <span className={`badge ${STATUS_BADGE[selected.status] || 'badge-muted'}`}>{selected.status}</span>
-                    <span className={`badge ${PAYMENT_BADGE[selected.payment_status] || 'badge-muted'}`}>{selected.payment_status}</span>
+                    <span className={`badge ${STATUS_BADGE[selected.status] || 'badge-muted'}`}>{STATUS_LABEL[selected.status] || selected.status}</span>
+                    <span className={`badge ${PAYMENT_BADGE[selected.payment_status] || 'badge-muted'}`}>{PAYMENT_LABEL[selected.payment_status] || selected.payment_status}</span>
                   </div>
                 </div>
               </div>
@@ -95,15 +95,14 @@ export default function OrdersPage() {
                 ))}
                 <div className="divider" />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div className={styles.summaryRow}><span>Subtotal</span><span>€{selected.subtotal_amount?.toFixed(2) ?? '—'}</span></div>
-                  <div className={styles.summaryRow}><span>Shipping</span><span>€{selected.shipping_amount?.toFixed(2) ?? '—'}</span></div>
-                  <div className={styles.summaryRow}><span>Tax</span><span>€{selected.tax_amount?.toFixed(2) ?? '—'}</span></div>
+                  <div className={styles.summaryRow}><span>Sous-total</span><span>€{selected.subtotal_amount?.toFixed(2) ?? '—'}</span></div>
+                  <div className={styles.summaryRow}><span>Livraison</span><span>€{selected.shipping_amount?.toFixed(2) ?? '—'}</span></div>
+                  <div className={styles.summaryRow}><span>TVA</span><span>€{selected.tax_amount?.toFixed(2) ?? '—'}</span></div>
                   <div className={styles.summaryTotal}><span>Total</span><span>€{selected.grand_total_amount?.toFixed(2) ?? selected.total_amount.toFixed(2)}</span></div>
                 </div>
-
                 {selected.payment_status === 'unpaid' && selected.status === 'created' && (
                   <Link href={`/checkout?order_id=${selected.id}`} className="btn btn-primary" style={{ marginTop: 8 }}>
-                    Complete Payment
+                    Finaliser le paiement
                   </Link>
                 )}
               </div>
