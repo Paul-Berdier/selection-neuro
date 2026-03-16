@@ -30,7 +30,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <div className={styles.authPage}>
         <div className={styles.authCard}>
           <div className={styles.authLogo}>◆ Admin</div>
-          <h2>Loading…</h2>
+          <h2>Chargement…</h2>
         </div>
       </div>
     )
@@ -41,9 +41,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   }
 
   const nav = [
-    { href: '/admin/orders', label: 'Orders', icon: '◈' },
-    { href: '/admin/products', label: 'Products', icon: '◉' },
-    { href: '/admin/inventory', label: 'Inventory', icon: '◌' },
+    { href: '/admin/orders', label: 'Commandes', icon: '◈' },
+    { href: '/admin/products', label: 'Produits', icon: '◉' },
+    { href: '/admin/inventory', label: 'Inventaire', icon: '◌' },
   ]
 
   return (
@@ -71,7 +71,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             router.replace('/login')
           }}
         >
-          Sign out
+          Déconnexion
         </button>
       </aside>
 

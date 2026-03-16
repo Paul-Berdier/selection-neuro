@@ -98,10 +98,10 @@ export default function ProductDetailPage() {
               {product.price_month_eur != null ? (
                 <>
                   <span className={styles.priceAmount}>€{product.price_month_eur.toFixed(2)}</span>
-                  <span className={styles.pricePer}>/moisnth</span>
+                  <span className={styles.pricePer}>/mois</span>
                 </>
               ) : (
-                <span className={styles.priceAmount}>Price on request</span>
+                <span className={styles.priceAmount}>Prix sur demande</span>
               )}
             </div>
           </div>
@@ -118,7 +118,7 @@ export default function ProductDetailPage() {
               onClick={handleAdd}
               disabled={adding || added}
             >
-              {added ? '✓ Added to cart' : adding ? 'Adding…' : 'Ajouter au panier'}
+              {added ? '✓ ✓ Ajouté au panier' : adding ? 'Ajout en cours…' : 'Ajouter au panier'}
             </button>
           </div>
 

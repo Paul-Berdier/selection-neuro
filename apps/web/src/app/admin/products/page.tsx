@@ -16,7 +16,7 @@ interface AdminProduct {
   is_active: boolean
 }
 
-const API = ''
+
 
 function ProductForm({ initial, onSuccess, onCancel }: {
   initial?: AdminProduct
@@ -124,7 +124,7 @@ function ProductForm({ initial, onSuccess, onCancel }: {
         <input ref={fileRef} type="file" accept="image/*" onChange={e => setImage(e.target.files?.[0] || null)} style={{ display: 'none' }} />
         <div className={styles.imageUpload}>
           {initial?.image_media_id && !image && (
-            <img src={`${API}/media/${initial.image_media_id}`} alt="" className={styles.imagePreview} />
+            <img src={`/api/media/${initial.image_media_id}`} alt="" className={styles.imagePreview} />
           )}
           {image && <span className={styles.imageFilename}>{image.name}</span>}
           <button type="button" className="btn btn-secondary btn-sm" onClick={() => fileRef.current?.click()}>
@@ -237,7 +237,7 @@ export default function AdminProductsPage() {
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     {p.image_media_id ? (
-                      <img src={`${API}/media/${p.image_media_id}`} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4, border: '1px solid var(--border)' }} />
+                      <img src={`/api/media/${p.image_media_id}`} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4, border: '1px solid var(--border)' }} />
                     ) : (
                       <div style={{ width: 40, height: 40, background: 'var(--bg-3)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-dim)', fontSize: 12, border: '1px solid var(--border)' }}>◆</div>
                     )}
