@@ -36,7 +36,7 @@ export interface Product {
   category: string
   price_month_eur: number | null
   image_url: string | null
-  id?: number
+  id: number
   stock_qty?: number | null
   is_active?: boolean
 }

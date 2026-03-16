@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 
 class ProductOut(BaseModel):
+    id: int
     slug: str
     name: str
     short_desc: str = ""
