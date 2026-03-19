@@ -12,11 +12,6 @@ router = APIRouter(prefix="/stacks", tags=["stacks"])
 
 
 def _get_stack_description(s) -> str:
-    """
-    Compat DB/models:
-    - new schema: Stack.description_md
-    - legacy schema: Stack.description
-    """
     return (getattr(s, "description_md", None) or getattr(s, "description", None) or "")
 
 
@@ -25,12 +20,15 @@ def _stack_to_out(s) -> StackOut:
 
     for sp in (getattr(s, "stack_products", None) or []):
         p = sp.product
+        price = getattr(p, "price_month_eur", None)
         products.append(
             StackProductOut(
+                product_id=p.id,
                 product_slug=p.slug,
                 product_name=p.name,
                 product_short_desc=p.short_desc or "",
                 product_category=p.category or "",
+                product_price_month_eur=float(price) if price is not None else None,
                 dosage_value=float(sp.dosage_value) if sp.dosage_value is not None else None,
                 dosage_unit=sp.dosage_unit or "",
                 note=sp.note or "",

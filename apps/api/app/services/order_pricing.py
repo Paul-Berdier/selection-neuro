@@ -6,6 +6,11 @@ from decimal import Decimal, ROUND_HALF_UP
 from app.models.address import Address
 from app.models.order import Order
 
+# ── Règles livraison (PDF: 10€ sous 30€, gratuite au-dessus) ────────────────
+FREE_SHIPPING_THRESHOLD = Decimal("30.00")
+FLAT_SHIPPING_FRANCE = Decimal("10.00")
+FLAT_SHIPPING_INTERNATIONAL = Decimal("14.90")
+
 
 def _d(x: float | str | Decimal) -> Decimal:
     if isinstance(x, Decimal):
@@ -25,17 +30,23 @@ class ShippingRate:
 
 
 def get_shipping_rates(address: Address | None) -> list[ShippingRate]:
-    # MVP rules; extensible later (zones, carriers, weight, etc.)
+    """
+    Règles métier (cahier des charges) :
+    - France : livraison 10€, offerte si panier >= 30€
+    - International : forfait 14.90€
+    Note : le montant retourné ici est le tarif nominal.
+    L'application du seuil gratuit se fait dans recompute_order_totals.
+    """
     country = (address.country if address else "FR") or "FR"
 
     if country == "FR":
         return [
-            ShippingRate("standard", "Standard (2-4 jours)", _d("4.90")),
-            ShippingRate("express", "Express (24-48h)", _d("9.90")),
+            ShippingRate("standard", "Standard (2-4 jours ouvrés)", FLAT_SHIPPING_FRANCE),
+            ShippingRate("express", "Express (24-48h)", _d("14.90")),
         ]
 
     return [
-        ShippingRate("standard", "International standard", _d("14.90")),
+        ShippingRate("standard", "International standard", FLAT_SHIPPING_INTERNATIONAL),
     ]
 
 
@@ -48,12 +59,13 @@ def get_tax_rate(address: Address | None) -> Decimal:
 
 def recompute_order_totals(order: Order, *, shipping_address: Address | None) -> None:
     """
-    Recompute totals from order items.
-    Policy:
-      - shipping/tax = 0 if no shipping address
-      - VAT on (subtotal + shipping)
-      - free FR standard shipping if subtotal >= 60
-      - keep order.total_amount in sync with grand_total_amount
+    Recalcule les totaux de la commande.
+
+    Règles :
+    - Livraison France standard : 10€, OFFERTE si sous-total >= 30€
+    - Livraison Express : toujours payante
+    - TVA FR 20% sur (sous-total + livraison)
+    - Hors France : pas de TVA, livraison forfait international
     """
     subtotal = _d("0")
     for it in order.items:
@@ -66,11 +78,18 @@ def recompute_order_totals(order: Order, *, shipping_address: Address | None) ->
         grand_total = _round2(subtotal)
     else:
         rates = get_shipping_rates(shipping_address)
-        chosen = next((r for r in rates if r.method == (order.shipping_method or "standard")), rates[0])
+        chosen = next(
+            (r for r in rates if r.method == (order.shipping_method or "standard")),
+            rates[0],
+        )
         shipping = chosen.amount
 
-        # free shipping threshold FR standard only
-        if shipping_address.country == "FR" and subtotal >= _d("60") and chosen.method == "standard":
+        # Livraison gratuite si sous-total >= seuil ET méthode standard France
+        if (
+            shipping_address.country == "FR"
+            and chosen.method == "standard"
+            and subtotal >= FREE_SHIPPING_THRESHOLD
+        ):
             shipping = _d("0")
 
         tax_rate = get_tax_rate(shipping_address)
@@ -83,6 +102,4 @@ def recompute_order_totals(order: Order, *, shipping_address: Address | None) ->
     order.tax_amount = float(_round2(tax))
     order.grand_total_amount = float(_round2(grand_total))
     order.tax_rate = float(tax_rate)
-
-    # keep legacy in sync
     order.total_amount = float(_round2(grand_total))
