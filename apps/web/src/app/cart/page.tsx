@@ -94,8 +94,8 @@ export default function CartPage() {
                 <span>€{cart.subtotal.toFixed(2)}</span>
               </div>
               <div className={styles.summaryRow} style={{ color: 'var(--text-3)', fontSize: 12 }}>
-                <span>Livraison & taxes</span>
-                <span>calculé à la commande</span>
+                <span>Livraison</span>
+                <span>{cart.subtotal >= 30 ? <span style={{color:"var(--success)"}}>Offerte</span> : "10€ (offerte dès 30€)"}</span>
               </div>
               <div className="divider" style={{ margin: '4px 0' }} />
               <div className={styles.summaryTotal}>

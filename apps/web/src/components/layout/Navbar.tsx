@@ -26,6 +26,7 @@ export default function Navbar() {
         <nav className={styles.nav}>
           <Link href="/products" className={pathname.startsWith('/products') ? styles.active : ''}>Produits</Link>
           <Link href="/stacks" className={pathname.startsWith('/stacks') ? styles.active : ''}>Stacks</Link>
+          <Link href="/contact" className={pathname.startsWith('/contact') ? styles.active : ''}>Contact</Link>
         </nav>
 
         <div className={styles.actions}>

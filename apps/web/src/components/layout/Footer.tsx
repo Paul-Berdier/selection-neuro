@@ -29,6 +29,7 @@ export default function Footer() {
             <h4>Mon compte</h4>
             <Link href="/account/orders">Mes commandes</Link>
             <Link href="/account/addresses">Adresses</Link>
+            <Link href="/contact">Contact</Link>
           </div>
         </div>
       </div>

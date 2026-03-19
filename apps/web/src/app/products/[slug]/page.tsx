@@ -7,6 +7,12 @@ import { useCart } from '@/hooks/useCart'
 import type { Product } from '@/types'
 import styles from './page.module.css'
 
+const DURATIONS = [
+  { label: '1 mois', months: 1, discount: 0 },
+  { label: '4 mois', months: 4, discount: 0.10 },
+  { label: '1 an', months: 12, discount: 0.20 },
+]
+
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>()
   const router = useRouter()
@@ -14,6 +20,7 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [qty, setQty] = useState(1)
+  const [duration, setDuration] = useState(0) // index dans DURATIONS
   const [adding, setAdding] = useState(false)
   const [added, setAdded] = useState(false)
   const [error, setError] = useState('')
@@ -39,6 +46,13 @@ export default function ProductDetailPage() {
     setAdding(false)
   }
 
+  const computePrice = () => {
+    if (!product?.price_month_eur) return null
+    const d = DURATIONS[duration]
+    const base = product.price_month_eur * d.months
+    return base * (1 - d.discount)
+  }
+
   if (loading) return (
     <div className="container" style={{ paddingTop: 80, paddingBottom: 80 }}>
       <div className={styles.skeletonLayout}>
@@ -59,13 +73,12 @@ export default function ProductDetailPage() {
     </div>
   )
 
-  
+  const totalPrice = computePrice()
+  const d = DURATIONS[duration]
 
   return (
     <div className="container" style={{ paddingTop: 60, paddingBottom: 80 }}>
-      <button className={styles.back} onClick={() => router.back()}>
-        ← Retour
-      </button>
+      <button className={styles.back} onClick={() => router.back()}>← Retour</button>
 
       <div className={styles.layout}>
         {/* Image */}
@@ -93,18 +106,71 @@ export default function ProductDetailPage() {
 
           <div className={styles.divider} />
 
+          {/* Variantes de durée */}
+          {product.price_month_eur != null && (
+            <div style={{ marginBottom: 20 }}>
+              <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Quantité</p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {DURATIONS.map((d, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setDuration(i)}
+                    style={{
+                      flex: 1,
+                      padding: '10px 8px',
+                      borderRadius: 10,
+                      border: duration === i ? '1px solid var(--accent)' : '1px solid var(--border)',
+                      background: duration === i ? 'rgba(255,214,102,0.08)' : 'var(--glass-bg)',
+                      color: duration === i ? 'var(--accent)' : 'var(--text-2)',
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      fontWeight: duration === i ? 600 : 400,
+                      transition: 'all 0.15s',
+                      position: 'relative',
+                    }}
+                  >
+                    {d.label}
+                    {d.discount > 0 && (
+                      <span style={{
+                        position: 'absolute', top: -8, right: -4,
+                        background: 'var(--accent)', color: '#000',
+                        fontSize: 9, fontWeight: 700, padding: '2px 5px',
+                        borderRadius: 6,
+                      }}>-{d.discount * 100}%</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Prix total */}
           <div className={styles.pricing}>
             <div className={styles.price}>
-              {product.price_month_eur != null ? (
-                <>
-                  <span className={styles.priceAmount}>€{product.price_month_eur.toFixed(2)}</span>
-                  <span className={styles.pricePer}>/mois</span>
-                </>
+              {totalPrice != null ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                    <span className={styles.priceAmount}>€{totalPrice.toFixed(2)}</span>
+                    <span style={{ fontSize: 13, color: 'var(--text-3)' }}>pour {d.label}</span>
+                  </div>
+                  {d.months > 1 && (
+                    <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                      soit €{(totalPrice / d.months).toFixed(2)}/mois
+                    </span>
+                  )}
+                </div>
               ) : (
                 <span className={styles.priceAmount}>Prix sur demande</span>
               )}
             </div>
           </div>
+
+          {/* Livraison */}
+          <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 16 }}>
+            {totalPrice && totalPrice >= 30
+              ? '✓ Livraison offerte'
+              : 'Livraison 10€ (offerte dès 30€)'}
+          </p>
 
           <div className={styles.addToCart}>
             <div className={styles.qtyControl}>

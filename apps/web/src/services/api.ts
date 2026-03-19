@@ -209,9 +209,9 @@ export const shippingApi = {
 
 export const paymentApi = {
   createCheckoutSession: (orderId: number) =>
-    request('/payment/session', { method: 'POST', body: JSON.stringify({ order_id: orderId }) }, true),
+    request('/payments/stripe/checkout-session', { method: 'POST', body: JSON.stringify({ order_id: orderId }) }, true),
   createSession: (orderId: number) =>
-    request('/payment/session', { method: 'POST', body: JSON.stringify({ order_id: orderId }) }, true),
+    request('/payments/stripe/checkout-session', { method: 'POST', body: JSON.stringify({ order_id: orderId }) }, true),
 }
 
 export const adminOrderApi = {

@@ -4,6 +4,7 @@ import { AuthProvider } from '@/hooks/useAuth'
 import { CartProvider } from '@/hooks/useCart'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
+import UTMCapture from '@/components/UTMCapture'
 
 export const metadata: Metadata = {
   title: 'Sélection Neuro — Soutien cognitif',
@@ -17,6 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <CartProvider>
             <Navbar />
+            <UTMCapture />
             <main style={{ minHeight: '80vh' }}>{children}</main>
             <Footer />
           </CartProvider>

@@ -29,6 +29,7 @@ export interface AddressIn {
 }
 
 export interface Product {
+  id: number
   slug: string
   name: string
   short_desc: string
@@ -36,7 +37,6 @@ export interface Product {
   category: string
   price_month_eur: number | null
   image_url: string | null
-  id: number
   stock_qty?: number | null
   is_active?: boolean
 }
@@ -90,10 +90,12 @@ export interface Order {
 }
 
 export interface StackProduct {
+  product_id?: number
   product_slug: string
   product_name: string
   product_short_desc: string
   product_category: string
+  product_price_month_eur?: number | null
   dosage_value: number | null
   dosage_unit: string
   note: string
