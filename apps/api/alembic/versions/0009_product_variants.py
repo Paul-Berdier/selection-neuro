@@ -11,8 +11,8 @@ Ajoute les colonnes de variantes 1 mois / 3 mois / 1 an sur la table product.
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0009"
-down_revision = "0008"
+revision = "0009_product_variants"
+down_revision = "0008_order_totals_shipping"
 branch_labels = None
 depends_on = None
 
