@@ -19,11 +19,23 @@ class Product(Base):
 
     category: Mapped[str] = mapped_column(String(80), default="")
 
-    # ✅ match DB column (0001_init_schema)
     image_path: Mapped[str] = mapped_column(String(400), default="")
 
-    # pricing
+    # Prix mensuel de référence (affiché sur la page Stack uniquement)
     price_month_eur: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+
+    # ── Variantes de vente (1 mois / 3 mois / 1 an) ──────────────────────────
+    # price_Xm : prix de vente TTC
+    # qty_g_Xm  : quantité en grammes livrée
+    price_1m: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    qty_g_1m: Mapped[float | None] = mapped_column(Numeric(12, 4), nullable=True)
+
+    price_3m: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    qty_g_3m: Mapped[float | None] = mapped_column(Numeric(12, 4), nullable=True)
+
+    price_1y: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    qty_g_1y: Mapped[float | None] = mapped_column(Numeric(12, 4), nullable=True)
+    # ─────────────────────────────────────────────────────────────────────────
 
     # media (image stored in DB)
     image_media_id: Mapped[int | None] = mapped_column(

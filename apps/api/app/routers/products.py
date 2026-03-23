@@ -4,16 +4,37 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.schemas.product import ProductListOut, ProductOut
+from app.schemas.product import ProductListOut, ProductOut, ProductVariant
 from app.services.product_service import list_products, get_product_by_slug
 
 router = APIRouter(prefix="/products", tags=["products"])
 
 
+def _build_variants(p) -> list[ProductVariant]:
+    """Construit la liste des variantes disponibles pour un produit."""
+    variants = []
+    specs = [
+        ("price_1m", "qty_g_1m", "1 mois",  1),
+        ("price_3m", "qty_g_3m", "3 mois",  3),
+        ("price_1y", "qty_g_1y", "1 an",   12),
+    ]
+    for price_attr, qty_attr, label, months in specs:
+        price = getattr(p, price_attr, None)
+        qty   = getattr(p, qty_attr,   None)
+        if price is not None and qty is not None:
+            variants.append(ProductVariant(
+                price=float(price),
+                qty_g=float(qty),
+                label=label,
+                months=months,
+            ))
+    return variants
+
+
 def to_product_out(p) -> ProductOut:
     price = getattr(p, "price_month_eur", None)
     return ProductOut(
-        id=p.id,                          # ← ajouter
+        id=p.id,
         slug=p.slug,
         name=p.name,
         short_desc=getattr(p, "short_desc", "") or "",
@@ -21,6 +42,7 @@ def to_product_out(p) -> ProductOut:
         category=getattr(p, "category", "") or "",
         price_month_eur=float(price) if price is not None else None,
         image_url=f"/media/{p.image_media_id}" if getattr(p, "image_media_id", None) else None,
+        variants=_build_variants(p),
     )
 
 

@@ -146,6 +146,7 @@ def add_product_benefits(db: Session, product_id: int, tags: list[str], mode: st
 
 
 def product_to_dict(p: Product) -> dict:
+    def _f(v): return float(v) if v is not None else None
     return {
         "id": p.id,
         "slug": p.slug,
@@ -153,9 +154,14 @@ def product_to_dict(p: Product) -> dict:
         "short_desc": p.short_desc,
         "category": p.category,
         "description_md": p.description_md,
-        "price_month_eur": float(p.price_month_eur) if p.price_month_eur is not None else None,
+        "price_month_eur": _f(p.price_month_eur),
         "image_media_id": p.image_media_id,
         "is_active": p.is_active,
+        "stock_qty": p.stock_qty,
+        # Variantes
+        "price_1m": _f(p.price_1m), "qty_g_1m": _f(p.qty_g_1m),
+        "price_3m": _f(p.price_3m), "qty_g_3m": _f(p.qty_g_3m),
+        "price_1y": _f(p.price_1y), "qty_g_1y": _f(p.qty_g_1y),
     }
 
 
@@ -169,6 +175,12 @@ async def admin_create_or_update_product(
     description_md: str = Form(""),
     category: str = Form(""),
     price_month_eur: str | None = Form(None),
+    price_1m: str | None = Form(None),
+    qty_g_1m: str | None = Form(None),
+    price_3m: str | None = Form(None),
+    qty_g_3m: str | None = Form(None),
+    price_1y: str | None = Form(None),
+    qty_g_1y: str | None = Form(None),
     is_active: bool = Form(True),
     benefits: str = Form(""),
     benefits_mode: str = Form("append"),
@@ -194,6 +206,12 @@ async def admin_create_or_update_product(
         category=category,
         image_path="",
         price_month_eur=price_val,
+        price_1m=parse_float_or_none(price_1m),
+        qty_g_1m=parse_float_or_none(qty_g_1m),
+        price_3m=parse_float_or_none(price_3m),
+        qty_g_3m=parse_float_or_none(qty_g_3m),
+        price_1y=parse_float_or_none(price_1y),
+        qty_g_1y=parse_float_or_none(qty_g_1y),
         image_media_id=image_media_id,
         is_active=is_active,
     )
@@ -263,6 +281,12 @@ async def admin_update_product(
     description_md: str | None = Form(None),
     category: str | None = Form(None),
     price_month_eur: str | None = Form(None),
+    price_1m: str | None = Form(None),
+    qty_g_1m: str | None = Form(None),
+    price_3m: str | None = Form(None),
+    qty_g_3m: str | None = Form(None),
+    price_1y: str | None = Form(None),
+    qty_g_1y: str | None = Form(None),
     is_active: bool | None = Form(None),
     benefits: str = Form(""),
     benefits_mode: str = Form("append"),
@@ -280,6 +304,13 @@ async def admin_update_product(
         product.category = category
     if price_month_eur is not None:
         product.price_month_eur = parse_float_or_none(price_month_eur)
+    for attr, val in [
+        ("price_1m", price_1m), ("qty_g_1m", qty_g_1m),
+        ("price_3m", price_3m), ("qty_g_3m", qty_g_3m),
+        ("price_1y", price_1y), ("qty_g_1y", qty_g_1y),
+    ]:
+        if val is not None:
+            setattr(product, attr, parse_float_or_none(val))
     if is_active is not None:
         product.is_active = is_active
 
