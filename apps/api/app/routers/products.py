@@ -11,24 +11,20 @@ router = APIRouter(prefix="/products", tags=["products"])
 
 
 def _build_variants(p) -> list[ProductVariant]:
-    """Construit la liste des variantes disponibles pour un produit."""
-    variants = []
-    specs = [
+    result = []
+    for price_attr, qty_attr, label, months in [
         ("price_1m", "qty_g_1m", "1 mois",  1),
         ("price_3m", "qty_g_3m", "3 mois",  3),
         ("price_1y", "qty_g_1y", "1 an",   12),
-    ]
-    for price_attr, qty_attr, label, months in specs:
+    ]:
         price = getattr(p, price_attr, None)
         qty   = getattr(p, qty_attr,   None)
         if price is not None and qty is not None:
-            variants.append(ProductVariant(
-                price=float(price),
-                qty_g=float(qty),
-                label=label,
-                months=months,
+            result.append(ProductVariant(
+                price=float(price), qty_g=float(qty),
+                label=label, months=months,
             ))
-    return variants
+    return result
 
 
 def to_product_out(p) -> ProductOut:
@@ -38,7 +34,7 @@ def to_product_out(p) -> ProductOut:
         slug=p.slug,
         name=p.name,
         short_desc=getattr(p, "short_desc", "") or "",
-        description_md=getattr(p, "description_md", "") or "",
+        description=getattr(p, "description", "") or "",
         category=getattr(p, "category", "") or "",
         price_month_eur=float(price) if price is not None else None,
         image_url=f"/media/{p.image_media_id}" if getattr(p, "image_media_id", None) else None,
@@ -48,8 +44,7 @@ def to_product_out(p) -> ProductOut:
 
 @router.get("", response_model=ProductListOut)
 def products(db: Session = Depends(get_db)):
-    items = [to_product_out(p) for p in list_products(db)]
-    return ProductListOut(items=items)
+    return ProductListOut(items=[to_product_out(p) for p in list_products(db)])
 
 
 @router.get("/{slug}", response_model=ProductOut)

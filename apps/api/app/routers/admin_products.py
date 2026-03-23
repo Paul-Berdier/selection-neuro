@@ -18,9 +18,9 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 
 def slugify(s: str) -> str:
     s = (s or "").strip().lower()
-    s = s.replace("’", "'")
+    s = s.replace("'", "'")
     s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("ascii")
-    s = re.sub(r"[`'’]+", "", s)
+    s = re.sub(r"[`'']+", "", s)
     s = re.sub(r"[^a-z0-9]+", "-", s)
     s = re.sub(r"-{2,}", "-", s).strip("-")
     return s or "item"
@@ -40,15 +40,13 @@ def guess_content_type(filename: str) -> str:
 def parse_float_or_none(s: str | None) -> float | None:
     if s is None:
         return None
-
-    value = s.strip()
-    if not value:
+    v = s.strip()
+    if not v:
         return None
-
     try:
-        return float(value.replace(",", "."))
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail="price_month_eur must be a number") from exc
+        return float(v.replace(",", "."))
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Valeur invalide : {s!r}")
 
 
 def split_tags(s: str) -> list[str]:
@@ -60,13 +58,10 @@ def upsert_media(db: Session, content: bytes, filename: str) -> Media:
     obj = db.query(Media).filter(Media.sha256 == h).first()
     if obj:
         return obj
-
     obj = Media(
-        sha256=h,
-        filename=filename,
+        sha256=h, filename=filename,
         content_type=guess_content_type(filename),
-        bytes=content,
-        size_bytes=len(content),
+        bytes=content, size_bytes=len(content),
     )
     db.add(obj)
     db.flush()
@@ -79,14 +74,7 @@ def upsert_benefit(db: Session, name: str) -> Benefit:
     if obj:
         obj.name = name
         return obj
-
-    obj = Benefit(
-        slug=bslug,
-        name=name,
-        description="",
-        sort_order=100,
-        is_active=True,
-    )
+    obj = Benefit(slug=bslug, name=name, description="", sort_order=100, is_active=True)
     db.add(obj)
     db.flush()
     return obj
@@ -95,11 +83,10 @@ def upsert_benefit(db: Session, name: str) -> Benefit:
 def upsert_product(db: Session, slug: str, **fields) -> Product:
     obj = db.query(Product).filter(Product.slug == slug).first()
     if obj:
-        for key, value in fields.items():
-            if value is not None or key == "image_media_id":
-                setattr(obj, key, value)
+        for k, v in fields.items():
+            if v is not None or k == "image_media_id":
+                setattr(obj, k, v)
         return obj
-
     obj = Product(slug=slug, **fields)
     db.add(obj)
     db.flush()
@@ -109,40 +96,23 @@ def upsert_product(db: Session, slug: str, **fields) -> Product:
 def ensure_product(db: Session, slug: str) -> Product:
     obj = db.query(Product).filter(Product.slug == slug).first()
     if not obj:
-        raise HTTPException(status_code=404, detail=f"Product not found: {slug}")
+        raise HTTPException(status_code=404, detail=f"Produit introuvable : {slug}")
     return obj
 
 
 def add_product_benefits(db: Session, product_id: int, tags: list[str], mode: str) -> None:
     if mode not in ("append", "replace"):
-        raise HTTPException(status_code=400, detail="benefits_mode must be 'append' or 'replace'")
-
+        raise HTTPException(status_code=400, detail="benefits_mode doit être 'append' ou 'replace'")
     if mode == "replace":
-        db.query(ProductBenefit).filter(ProductBenefit.product_id == product_id).delete(
-            synchronize_session=False
-        )
-
+        db.query(ProductBenefit).filter(ProductBenefit.product_id == product_id).delete(synchronize_session=False)
     for tag in tags:
         benefit = upsert_benefit(db, tag)
-        link = (
-            db.query(ProductBenefit)
-            .filter(
-                ProductBenefit.product_id == product_id,
-                ProductBenefit.benefit_id == benefit.id,
-            )
-            .first()
-        )
-        if link:
-            continue
-
-        db.add(
-            ProductBenefit(
-                product_id=product_id,
-                benefit_id=benefit.id,
-                note="",
-                evidence_level=None,
-            )
-        )
+        exists = db.query(ProductBenefit).filter(
+            ProductBenefit.product_id == product_id,
+            ProductBenefit.benefit_id == benefit.id,
+        ).first()
+        if not exists:
+            db.add(ProductBenefit(product_id=product_id, benefit_id=benefit.id, note="", evidence_level=None))
 
 
 def product_to_dict(p: Product) -> dict:
@@ -152,13 +122,13 @@ def product_to_dict(p: Product) -> dict:
         "slug": p.slug,
         "name": p.name,
         "short_desc": p.short_desc,
+        "description": p.description,
         "category": p.category,
-        "description_md": p.description_md,
         "price_month_eur": _f(p.price_month_eur),
         "image_media_id": p.image_media_id,
         "is_active": p.is_active,
         "stock_qty": p.stock_qty,
-        # Variantes
+        # Variantes de vente
         "price_1m": _f(p.price_1m), "qty_g_1m": _f(p.qty_g_1m),
         "price_3m": _f(p.price_3m), "qty_g_3m": _f(p.qty_g_3m),
         "price_1y": _f(p.price_1y), "qty_g_1y": _f(p.qty_g_1y),
@@ -166,15 +136,17 @@ def product_to_dict(p: Product) -> dict:
 
 
 @router.post("/products")
-async def admin_create_or_update_product(
+async def admin_create_product(
     _: User = Depends(require_admin),
     db: Session = Depends(get_db),
     name: str = Form(...),
     slug: str | None = Form(None),
     short_desc: str = Form(""),
-    description_md: str = Form(""),
+    description: str = Form(""),
     category: str = Form(""),
+    # Prix mensuel de référence — Stack uniquement
     price_month_eur: str | None = Form(None),
+    # Variantes de vente
     price_1m: str | None = Form(None),
     qty_g_1m: str | None = Form(None),
     price_3m: str | None = Form(None),
@@ -195,23 +167,16 @@ async def admin_create_or_update_product(
             media = upsert_media(db, content, image.filename or "image")
             image_media_id = media.id
 
-    price_val = parse_float_or_none(price_month_eur)
-
     product = upsert_product(
-        db,
-        pslug,
+        db, pslug,
         name=name,
         short_desc=short_desc,
-        description_md=description_md,
+        description=description,
         category=category,
-        image_path="",
-        price_month_eur=price_val,
-        price_1m=parse_float_or_none(price_1m),
-        qty_g_1m=parse_float_or_none(qty_g_1m),
-        price_3m=parse_float_or_none(price_3m),
-        qty_g_3m=parse_float_or_none(qty_g_3m),
-        price_1y=parse_float_or_none(price_1y),
-        qty_g_1y=parse_float_or_none(qty_g_1y),
+        price_month_eur=parse_float_or_none(price_month_eur),
+        price_1m=parse_float_or_none(price_1m), qty_g_1m=parse_float_or_none(qty_g_1m),
+        price_3m=parse_float_or_none(price_3m), qty_g_3m=parse_float_or_none(qty_g_3m),
+        price_1y=parse_float_or_none(price_1y), qty_g_1y=parse_float_or_none(qty_g_1y),
         image_media_id=image_media_id,
         is_active=is_active,
     )
@@ -222,53 +187,32 @@ async def admin_create_or_update_product(
 
     db.commit()
     db.refresh(product)
-
-    return {
-        "ok": True,
-        "product": product_to_dict(product),
-        "benefits_added": tags,
-        "benefits_mode": benefits_mode,
-    }
+    return {"ok": True, "product": product_to_dict(product)}
 
 
 @router.get("/products")
 def admin_list_products(
     _: User = Depends(require_admin),
     db: Session = Depends(get_db),
-    q: str | None = Query(default=None, description="Search on slug/name"),
+    q: str | None = Query(default=None),
     is_active: bool | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ):
     query = db.query(Product)
-
     if q:
         ql = f"%{q.strip().lower()}%"
         query = query.filter((Product.slug.ilike(ql)) | (Product.name.ilike(ql)))
-
     if is_active is not None:
         query = query.filter(Product.is_active == is_active)
-
     total = query.count()
     items = query.order_by(Product.name.asc()).offset(offset).limit(limit).all()
-
-    return {
-        "ok": True,
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-        "items": [product_to_dict(p) for p in items],
-    }
+    return {"ok": True, "total": total, "limit": limit, "offset": offset, "items": [product_to_dict(p) for p in items]}
 
 
 @router.get("/products/{slug}")
-def admin_get_product(
-    slug: str,
-    _: User = Depends(require_admin),
-    db: Session = Depends(get_db),
-):
-    product = ensure_product(db, slug)
-    return {"ok": True, "product": product_to_dict(product)}
+def admin_get_product(slug: str, _: User = Depends(require_admin), db: Session = Depends(get_db)):
+    return {"ok": True, "product": product_to_dict(ensure_product(db, slug))}
 
 
 @router.put("/products/{slug}")
@@ -278,7 +222,7 @@ async def admin_update_product(
     db: Session = Depends(get_db),
     name: str | None = Form(None),
     short_desc: str | None = Form(None),
-    description_md: str | None = Form(None),
+    description: str | None = Form(None),
     category: str | None = Form(None),
     price_month_eur: str | None = Form(None),
     price_1m: str | None = Form(None),
@@ -294,16 +238,14 @@ async def admin_update_product(
 ):
     product = ensure_product(db, slug)
 
-    if name is not None:
-        product.name = name
-    if short_desc is not None:
-        product.short_desc = short_desc
-    if description_md is not None:
-        product.description_md = description_md
-    if category is not None:
-        product.category = category
+    if name is not None:         product.name = name
+    if short_desc is not None:   product.short_desc = short_desc
+    if description is not None:  product.description = description
+    if category is not None:     product.category = category
     if price_month_eur is not None:
         product.price_month_eur = parse_float_or_none(price_month_eur)
+    if is_active is not None:    product.is_active = is_active
+
     for attr, val in [
         ("price_1m", price_1m), ("qty_g_1m", qty_g_1m),
         ("price_3m", price_3m), ("qty_g_3m", qty_g_3m),
@@ -311,8 +253,6 @@ async def admin_update_product(
     ]:
         if val is not None:
             setattr(product, attr, parse_float_or_none(val))
-    if is_active is not None:
-        product.is_active = is_active
 
     if image is not None:
         content = await image.read()
@@ -326,21 +266,11 @@ async def admin_update_product(
 
     db.commit()
     db.refresh(product)
-
-    return {
-        "ok": True,
-        "product": product_to_dict(product),
-        "benefits_added": tags,
-        "benefits_mode": benefits_mode,
-    }
+    return {"ok": True, "product": product_to_dict(product)}
 
 
 @router.delete("/products/{slug}")
-def admin_soft_delete_product(
-    slug: str,
-    _: User = Depends(require_admin),
-    db: Session = Depends(get_db),
-):
+def admin_soft_delete_product(slug: str, _: User = Depends(require_admin), db: Session = Depends(get_db)):
     product = ensure_product(db, slug)
     product.is_active = False
     db.commit()
