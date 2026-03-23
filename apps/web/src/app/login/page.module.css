@@ -61,3 +61,70 @@
 @media (max-width: 480px) {
   .card { padding: 32px 24px; }
 }
+
+/* ── Auth additions ──────────────────────────────────────── */
+.errorBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255,124,141,0.08);
+  border: 1px solid rgba(255,124,141,0.25);
+  color: var(--error);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.dividerRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 24px 0 16px;
+}
+.dividerLine {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.dividerText {
+  font-size: 11px;
+  color: var(--text-3);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.registerBtn {
+  text-align: center;
+  justify-content: center;
+}
+
+.successIcon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(82,208,168,0.12);
+  border: 1px solid rgba(82,208,168,0.3);
+  color: var(--success);
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
