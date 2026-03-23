@@ -159,7 +159,7 @@ def upgrade() -> None:
         "user",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
         sa.Column("email", sa.String(320), nullable=False),
-        sa.Column("hashed_password", sa.String(200), nullable=False),
+        sa.Column("password_hash", sa.String(255), nullable=False),
         sa.Column("full_name", sa.String(200), nullable=False, server_default=""),
         sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.Column("is_admin", sa.Boolean(), nullable=False, server_default=sa.text("false")),
