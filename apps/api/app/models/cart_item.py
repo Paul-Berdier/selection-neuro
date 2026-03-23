@@ -17,7 +17,7 @@ class CartItem(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
     cart_id: Mapped[int] = mapped_column(
-        ForeignKey("carts.id", ondelete="CASCADE"),
+        ForeignKey("cart.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
@@ -32,7 +32,6 @@ class CartItem(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")
     )
-    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")
     )
 

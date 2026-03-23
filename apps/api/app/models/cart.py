@@ -9,9 +9,9 @@ from app.db.base import Base
 
 
 class Cart(Base):
-    __tablename__ = "carts"
+    __tablename__ = "cart"
     __table_args__ = (
-        UniqueConstraint("user_id", name="uq_carts_user_id"),
+        UniqueConstraint("user_id", name="uq_cart_user_id"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

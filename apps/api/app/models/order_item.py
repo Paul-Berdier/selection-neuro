@@ -9,7 +9,7 @@ from app.db.base import Base
 
 
 class OrderItem(Base):
-    __tablename__ = "order_items"
+    __tablename__ = "order_item"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
@@ -30,8 +30,6 @@ class OrderItem(Base):
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("1"))
     line_total: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, server_default=text("0"))
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=text("now()")
     )
 
     order = relationship("Order", back_populates="items")

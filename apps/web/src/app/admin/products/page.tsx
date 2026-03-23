@@ -125,7 +125,7 @@ function ProductForm({ initial, onSuccess, onCancel }: {
         </div>
       </div>
       <div className="form-group">
-        <label className="form-label">Description (Markdown)</label>
+        <label className="form-label">Description</label>
         <textarea className="textarea" value={descMd} onChange={e => setDescMd(e.target.value)} rows={5} />
       </div>
       <div className="form-grid">

@@ -31,6 +31,5 @@ class Address(Base):
     phone: Mapped[str] = mapped_column(String(40), nullable=False, server_default=text("''"))
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
 
     user = relationship("User")
