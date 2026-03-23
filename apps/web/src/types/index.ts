@@ -41,7 +41,7 @@ export interface Product {
   slug: string
   name: string
   short_desc: string
-  description_md: string
+  description: string
   category: string
   /** Prix mensuel de référence — affiché sur la page Stack uniquement */
   price_month_eur: number | null

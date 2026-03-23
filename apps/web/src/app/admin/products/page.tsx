@@ -10,7 +10,7 @@ interface AdminProduct {
   name: string
   short_desc: string
   category: string
-  description_md: string
+  description: string
   price_month_eur: number | null
   image_media_id: number | null
   is_active: boolean
@@ -30,7 +30,7 @@ function ProductForm({ initial, onSuccess, onCancel }: {
   const [name, setName] = useState(initial?.name || '')
   const [slug, setSlug] = useState(initial?.slug || '')
   const [shortDesc, setShortDesc] = useState(initial?.short_desc || '')
-  const [descMd, setDescMd] = useState(initial?.description_md || '')
+  const [descMd, setDescMd] = useState(initial?.description || '')
   const [category, setCategory] = useState(initial?.category || '')
   const [price, setPrice] = useState(initial?.price_month_eur?.toString() || '')
   const [isActive, setIsActive] = useState(initial?.is_active ?? true)
@@ -55,7 +55,7 @@ function ProductForm({ initial, onSuccess, onCancel }: {
       fd.append('name', name)
       if (slug) fd.append('slug', slug)
       fd.append('short_desc', shortDesc)
-      fd.append('description_md', descMd)
+      fd.append('description', descMd)
       fd.append('category', category)
       if (price) fd.append('price_month_eur', price)
       fd.append('is_active', String(isActive))
@@ -71,7 +71,7 @@ function ProductForm({ initial, onSuccess, onCancel }: {
     } else {
       if (name !== initial.name) fd.append('name', name)
       if (shortDesc !== initial.short_desc) fd.append('short_desc', shortDesc)
-      if (descMd !== initial.description_md) fd.append('description_md', descMd)
+      if (descMd !== initial.description) fd.append('description', descMd)
       if (category !== initial.category) fd.append('category', category)
       if (price) fd.append('price_month_eur', price)
       fd.append('is_active', String(isActive))

@@ -8,7 +8,7 @@ import { useCart } from '@/hooks/useCart'
 import type { Stack } from '@/types'
 import styles from './page.module.css'
 
-// Durées d'abonnement — seul endroit où le prix mensuel est affiché
+// Durées d'abonnement — le seul endroit de l'app où le prix mensuel est affiché
 const DURATIONS = [
   { label: '1 mois',  months: 1,  discount: 0 },
   { label: '3 mois',  months: 3,  discount: 0.10 },
@@ -31,14 +31,13 @@ export default function StackDetailPage() {
       .catch(() => setLoading(false))
   }, [slug])
 
-  // Somme des prix mensuels de référence de chaque produit du stack
   const totalMonthlyPrice = stack?.products.reduce((sum, sp) => {
     return sum + (sp.product_price_month_eur ?? 0)
   }, 0) ?? 0
 
   const d = DURATIONS[duration]
   const totalPrice = totalMonthlyPrice * d.months * (1 - d.discount)
-  const saving = d.discount > 0
+  const savingEur = d.discount > 0
     ? (totalMonthlyPrice * d.months * d.discount).toFixed(2)
     : null
 
@@ -76,13 +75,50 @@ export default function StackDetailPage() {
       <div className={styles.hero}>
         <div className="container">
           <button className={styles.back} onClick={() => router.back()}>← Stacks</button>
-          <span className={styles.eyebrow}>Abonnement mensuel</span>
+
+          {/* Bandeau distinctif — abonnement ≠ achat unitaire */}
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '6px 14px',
+            borderRadius: 20,
+            background: 'rgba(255,214,102,0.12)',
+            border: '1px solid rgba(255,214,102,0.3)',
+            fontSize: 12,
+            color: 'var(--accent)',
+            fontWeight: 600,
+            marginBottom: 16,
+          }}>
+            🔄 Logique d&apos;abonnement mensuel — prix par mois
+          </div>
+
           <h1 className={styles.title}>{stack.title}</h1>
           {stack.subtitle && <p className={styles.subtitle}>{stack.subtitle}</p>}
         </div>
       </div>
 
       <div className="container" style={{ paddingBottom: 80 }}>
+
+        {/* Avertissement contexte abonnement vs unitaire */}
+        <div style={{
+          marginBottom: 24,
+          padding: '12px 18px',
+          borderRadius: 10,
+          background: 'rgba(255,214,102,0.05)',
+          border: '1px solid rgba(255,214,102,0.15)',
+          fontSize: 13,
+          color: 'var(--text-2)',
+          lineHeight: 1.6,
+        }}>
+          <strong style={{ color: 'var(--accent)' }}>ℹ️ Page abonnement</strong>
+          {' '}— Les prix affichés ici sont des <strong>références mensuelles</strong> utilisées pour calculer le coût de l&apos;abonnement.
+          Ils sont différents des prix unitaires des fiches produit.{' '}
+          <Link href="/products" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
+            Voir les fiches produits →
+          </Link>
+        </div>
+
         <div className={styles.layout}>
 
           {/* Liste des produits */}
@@ -105,17 +141,22 @@ export default function StackDetailPage() {
                       <p className={styles.dosageNote}>{sp.note}</p>
                     )}
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
                     {sp.dosage_value && (
                       <span className="badge badge-accent">
                         {sp.dosage_value}{sp.dosage_unit}
                       </span>
                     )}
-                    {/* Prix mensuel affiché ici car c'est la page Stack = logique abonnement */}
+                    {/* Prix/mois — affiché UNIQUEMENT sur la page Stack car logique abonnement */}
                     {sp.product_price_month_eur != null && (
-                      <span style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 600 }}>
-                        €{sp.product_price_month_eur.toFixed(2)}<span style={{ fontWeight: 400, color: 'var(--text-3)' }}>/mois</span>
-                      </span>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ fontSize: 14, color: 'var(--accent)', fontWeight: 700 }}>
+                          €{sp.product_price_month_eur.toFixed(2)}
+                        </span>
+                        <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>
+                          /mois (réf.)
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -176,25 +217,39 @@ export default function StackDetailPage() {
                 {/* Récapitulatif prix */}
                 {totalMonthlyPrice > 0 && (
                   <div style={{ background: 'var(--glass-bg)', borderRadius: 12, padding: '14px 16px', border: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
                       <span style={{ color: 'var(--text-2)', fontSize: 13 }}>Total {d.label}</span>
                       <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--accent)', letterSpacing: '-0.02em' }}>
                         €{totalPrice.toFixed(2)}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                       <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
                         €{(totalMonthlyPrice * (1 - d.discount)).toFixed(2)}/mois
                         {d.discount > 0 && ` · -${d.discount * 100}% vs mensuel`}
                       </span>
-                      {saving && (
+                      {savingEur && (
                         <span style={{ fontSize: 12, color: 'var(--success, #4ade80)', fontWeight: 500 }}>
-                          Économie de €{saving}
+                          Économie de €{savingEur} sur la période
                         </span>
                       )}
-                      <span style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>
-                        {totalPrice >= 30 ? '✓ Livraison offerte' : 'Livraison 10€ (offerte dès 30€)'}
-                      </span>
+                      {/* Règle livraison ferme */}
+                      <div style={{
+                        marginTop: 6,
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        background: totalPrice >= 30 ? 'rgba(74,222,128,0.07)' : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${totalPrice >= 30 ? 'rgba(74,222,128,0.2)' : 'var(--border)'}`,
+                        fontSize: 11,
+                      }}>
+                        {totalPrice >= 30 ? (
+                          <span style={{ color: 'var(--success, #4ade80)' }}>✓ Livraison offerte dès 30€</span>
+                        ) : (
+                          <span style={{ color: 'var(--text-3)' }}>
+                            🚚 <strong>Livraison 10€</strong> (obligatoire sous 30€) · offerte dès 30€
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -208,9 +263,10 @@ export default function StackDetailPage() {
                   {added ? '✓ Produits ajoutés au panier' : adding ? 'Ajout en cours…' : 'Ajouter tous au panier'}
                 </button>
 
-                <p style={{ fontSize: 11, color: 'var(--text-3)', textAlign: 'center', lineHeight: 1.5 }}>
-                  Les prix affichés sont des prix de référence mensuelle.<br/>
-                  Choisissez votre variante sur chaque fiche produit.
+                <p style={{ fontSize: 11, color: 'var(--text-3)', textAlign: 'center', lineHeight: 1.6, padding: '0 8px' }}>
+                  Les prix <strong>/mois</strong> sont des références pour cet abonnement.
+                  Chaque produit dispose de ses propres variantes (1 mois / 3 mois / 1 an)
+                  sur sa fiche produit.
                 </p>
               </div>
             </div>

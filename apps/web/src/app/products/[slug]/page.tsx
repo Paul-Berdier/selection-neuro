@@ -66,13 +66,42 @@ export default function ProductDetailPage() {
   const hasVariants = variants.length > 0
   const selected = variants[variantIdx] ?? null
 
-  // Prix à afficher — variante sélectionnée si dispo, sinon prix mensuel de ref
   const displayPrice = selected?.price ?? null
   const displayQty = selected?.qty_g ?? null
+
+  // Économie par rapport à la variante 1 mois
+  const base1m = variants[0]
+  const saving = selected && base1m && selected !== base1m
+    ? Math.round((1 - (selected.price / selected.months) / (base1m.price / base1m.months)) * 100)
+    : 0
 
   return (
     <div className="container" style={{ paddingTop: 60, paddingBottom: 80 }}>
       <button className={styles.back} onClick={() => router.back()}>← Retour</button>
+
+      {/* Bandeau distinctif — achat unitaire ≠ abonnement */}
+      <div style={{
+        marginBottom: 24,
+        padding: '10px 16px',
+        borderRadius: 10,
+        background: 'rgba(255,214,102,0.07)',
+        border: '1px solid rgba(255,214,102,0.2)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        fontSize: 12,
+        color: 'var(--text-2)',
+      }}>
+        <span style={{ fontSize: 16 }}>📦</span>
+        <span>
+          <strong style={{ color: 'var(--accent)' }}>Achat unitaire</strong>
+          {' '}— vous achetez une quantité précise.{' '}
+          <span style={{ color: 'var(--text-3)' }}>
+            Pour un abonnement mensuel, consultez nos{' '}
+            <a href="/stacks" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>Stacks</a>.
+          </span>
+        </span>
+      </div>
 
       <div className={styles.layout}>
         {/* Image */}
@@ -92,26 +121,24 @@ export default function ProductDetailPage() {
 
           <div className={styles.divider} />
 
-          {product.description_md && (
+          {product.description && (
             <div className={styles.description}>
-              <pre className={styles.descPre}>{product.description_md}</pre>
+              <pre className={styles.descPre}>{product.description}</pre>
             </div>
           )}
 
           <div className={styles.divider} />
 
           {/* Sélecteur de variantes */}
-          {hasVariants && (
+          {hasVariants ? (
             <div style={{ marginBottom: 20 }}>
               <p style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                Durée d&apos;approvisionnement
+                Choisir la quantité
               </p>
               <div style={{ display: 'flex', gap: 8 }}>
                 {variants.map((v, i) => {
                   const isActive = variantIdx === i
-                  // Calculer l'économie par rapport à la variante 1 mois
-                  const base1m = variants[0]
-                  const saving = base1m
+                  const s = base1m
                     ? Math.round((1 - (v.price / v.months) / (base1m.price / base1m.months)) * 100)
                     : 0
                   return (
@@ -133,22 +160,41 @@ export default function ProductDetailPage() {
                         textAlign: 'center',
                       }}
                     >
-                      <div style={{ fontWeight: 600 }}>{v.label}</div>
+                      <div style={{ fontWeight: 600 }}>
+                        {v.qty_g >= 1000
+                          ? `${(v.qty_g / 1000).toFixed(v.qty_g % 1000 === 0 ? 0 : 2)} kg`
+                          : `${v.qty_g} g`}
+                      </div>
                       <div style={{ fontSize: 11, marginTop: 2, color: isActive ? 'var(--accent)' : 'var(--text-3)' }}>
+                        {v.label}
+                      </div>
+                      <div style={{ fontSize: 12, marginTop: 2, fontWeight: 600 }}>
                         €{v.price.toFixed(2)}
                       </div>
-                      {saving > 0 && (
+                      {s > 0 && (
                         <span style={{
                           position: 'absolute', top: -8, right: -4,
                           background: 'var(--accent)', color: '#000',
                           fontSize: 9, fontWeight: 700, padding: '2px 5px',
                           borderRadius: 6, lineHeight: 1.4,
-                        }}>-{saving}%</span>
+                        }}>-{s}%</span>
                       )}
                     </button>
                   )
                 })}
               </div>
+            </div>
+          ) : (
+            <div style={{
+              padding: '12px 16px',
+              borderRadius: 10,
+              background: 'var(--glass-bg)',
+              border: '1px solid var(--border)',
+              marginBottom: 20,
+              fontSize: 13,
+              color: 'var(--text-3)',
+            }}>
+              Variantes non disponibles pour ce produit.
             </div>
           )}
 
@@ -160,20 +206,20 @@ export default function ProductDetailPage() {
                   <span className={styles.priceAmount}>€{displayPrice.toFixed(2)}</span>
                   {selected && (
                     <span style={{ fontSize: 13, color: 'var(--text-3)' }}>
-                      pour {selected.label}
+                      · {selected.months > 1 ? `soit €${(displayPrice / selected.months).toFixed(2)}/mois` : 'pour 1 mois'}
                     </span>
                   )}
                 </div>
-                {selected && selected.months > 1 && (
-                  <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
-                    soit €{(displayPrice / selected.months).toFixed(2)}/mois
+                {saving > 0 && (
+                  <span style={{ fontSize: 12, color: 'var(--success, #4ade80)', fontWeight: 500 }}>
+                    Économie de {saving}% par rapport à la variante 1 mois
                   </span>
                 )}
                 {displayQty != null && (
                   <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
                     {displayQty >= 1000
-                      ? `${(displayQty / 1000).toFixed(2).replace('.00', '')} kg`
-                      : `${displayQty} g`}
+                      ? `${(displayQty / 1000).toFixed(2).replace('.00', '')} kg d'actif`
+                      : `${displayQty} g d'actif`}
                   </span>
                 )}
               </div>
@@ -182,12 +228,35 @@ export default function ProductDetailPage() {
             )}
           </div>
 
-          {/* Info livraison */}
-          <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '8px 0 16px' }}>
-            {displayPrice && displayPrice >= 30
-              ? '✓ Livraison offerte'
-              : 'Livraison 10€ · offerte dès 30€ d\'achat'}
-          </p>
+          {/* Info livraison — règle ferme 10€ sous 30€ */}
+          <div style={{
+            margin: '10px 0 16px',
+            padding: '10px 14px',
+            borderRadius: 8,
+            background: displayPrice != null && displayPrice * qty >= 30
+              ? 'rgba(74,222,128,0.06)'
+              : 'rgba(255,255,255,0.03)',
+            border: '1px solid var(--border)',
+            fontSize: 12,
+            color: 'var(--text-3)',
+          }}>
+            {displayPrice != null && displayPrice * qty >= 30 ? (
+              <span style={{ color: 'var(--success, #4ade80)' }}>✓ Livraison offerte dès 30€</span>
+            ) : (
+              <>
+                <span style={{ color: 'var(--text-2)' }}>🚚 Livraison 10€</span>
+                {displayPrice != null && displayPrice * qty < 30 && (
+                  <span> · offerte dès 30€ d&apos;achat
+                    {displayPrice != null && (
+                      <span style={{ color: 'var(--accent)' }}>
+                        {' '}(encore €{Math.max(0, 30 - displayPrice * qty).toFixed(2)})
+                      </span>
+                    )}
+                  </span>
+                )}
+              </>
+            )}
+          </div>
 
           <div className={styles.addToCart}>
             <div className={styles.qtyControl}>

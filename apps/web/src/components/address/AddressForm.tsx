@@ -10,7 +10,33 @@ interface Props {
   onCancel?: () => void
 }
 
-const COUNTRIES = ['FR', 'DE', 'GB', 'ES', 'IT', 'BE', 'NL', 'PT', 'CH', 'AT', 'US', 'CA']
+const COUNTRIES: { code: string; label: string }[] = [
+  { code: 'FR', label: '🇫🇷 France' },
+  { code: 'BE', label: '🇧🇪 Belgique' },
+  { code: 'CH', label: '🇨🇭 Suisse' },
+  { code: 'LU', label: '🇱🇺 Luxembourg' },
+  { code: 'DE', label: '🇩🇪 Allemagne' },
+  { code: 'ES', label: '🇪🇸 Espagne' },
+  { code: 'IT', label: '🇮🇹 Italie' },
+  { code: 'PT', label: '🇵🇹 Portugal' },
+  { code: 'NL', label: '🇳🇱 Pays-Bas' },
+  { code: 'AT', label: '🇦🇹 Autriche' },
+  { code: 'GB', label: '🇬🇧 Royaume-Uni' },
+  { code: 'US', label: '🇺🇸 États-Unis' },
+  { code: 'CA', label: '🇨🇦 Canada' },
+]
+
+function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div className="form-group">
+      <label className="form-label">
+        {label}
+        {required && <span style={{ color: 'var(--accent)', marginLeft: 3 }}>*</span>}
+      </label>
+      {children}
+    </div>
+  )
+}
 
 export default function AddressForm({ initial, onSuccess, onCancel }: Props) {
   const [form, setForm] = useState<AddressIn>({
@@ -29,7 +55,10 @@ export default function AddressForm({ initial, onSuccess, onCancel }: Props) {
   const set = (k: keyof AddressIn) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm(prev => ({ ...prev, [k]: e.target.value }))
 
+  const isValid = form.label && form.full_name && form.line1 && form.city && form.postal_code && form.country
+
   const handleSubmit = async () => {
+    if (!isValid) return
     setLoading(true)
     setError('')
     try {
@@ -47,58 +76,131 @@ export default function AddressForm({ initial, onSuccess, onCancel }: Props) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div className="form-group">
-        <label className="form-label">Libellé (ex. Domicile, Bureau)</label>
-        <input className="input" value={form.label} onChange={set('label')} placeholder="Domicile" />
-      </div>
-      <div className="form-group">
-        <label className="form-label">Nom complet</label>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+      {/* Libellé */}
+      <Field label="Libellé" required>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {['Domicile', 'Bureau', 'Autre'].map(preset => (
+            <button
+              key={preset}
+              type="button"
+              onClick={() => setForm(p => ({ ...p, label: preset }))}
+              style={{
+                padding: '6px 14px',
+                borderRadius: 8,
+                border: form.label === preset ? '1.5px solid var(--accent)' : '1px solid var(--border)',
+                background: form.label === preset ? 'rgba(255,214,102,0.08)' : 'transparent',
+                color: form.label === preset ? 'var(--accent)' : 'var(--text-2)',
+                cursor: 'pointer',
+                fontSize: 13,
+                fontWeight: form.label === preset ? 600 : 400,
+              }}
+            >
+              {preset}
+            </button>
+          ))}
+        </div>
+        <input
+          className="input"
+          style={{ marginTop: 8 }}
+          value={form.label}
+          onChange={set('label')}
+          placeholder="ou saisir un libellé personnalisé"
+        />
+      </Field>
+
+      {/* Nom complet */}
+      <Field label="Nom complet" required>
         <input className="input" value={form.full_name} onChange={set('full_name')} placeholder="Jean Dupont" />
-      </div>
-      <div className="form-group">
-        <label className="form-label">Adresse ligne 1</label>
-        <input className="input" value={form.line1} onChange={set('line1')} placeholder="123 rue de la Paix" />
-      </div>
-      <div className="form-group">
-        <label className="form-label">Adresse ligne 2 (optionnel)</label>
-        <input className="input" value={form.line2} onChange={set('line2')} placeholder="Apt, Bâtiment, etc." />
-      </div>
+      </Field>
+
+      {/* Adresses */}
+      <Field label="Adresse" required>
+        <input
+          className="input"
+          value={form.line1}
+          onChange={set('line1')}
+          placeholder="123 rue de la Paix"
+          style={{ marginBottom: 8 }}
+        />
+        <input
+          className="input"
+          value={form.line2}
+          onChange={set('line2')}
+          placeholder="Appartement, bâtiment, étage (optionnel)"
+        />
+      </Field>
+
+      {/* Ville / CP */}
       <div className="form-grid">
-        <div className="form-group">
-          <label className="form-label">Ville</label>
+        <Field label="Code postal" required>
+          <input
+            className="input"
+            value={form.postal_code}
+            onChange={set('postal_code')}
+            placeholder="75001"
+            maxLength={10}
+            inputMode="numeric"
+          />
+        </Field>
+        <Field label="Ville" required>
           <input className="input" value={form.city} onChange={set('city')} placeholder="Paris" />
-        </div>
-        <div className="form-group">
-          <label className="form-label">Code postal</label>
-          <input className="input" value={form.postal_code} onChange={set('postal_code')} placeholder="75001" />
-        </div>
+        </Field>
       </div>
+
+      {/* Pays / Téléphone */}
       <div className="form-grid">
-        <div className="form-group">
-          <label className="form-label">Pays</label>
+        <Field label="Pays" required>
           <select className="select" value={form.country} onChange={set('country')}>
-            {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+            {COUNTRIES.map(c => (
+              <option key={c.code} value={c.code}>{c.label}</option>
+            ))}
           </select>
-        </div>
-        <div className="form-group">
-          <label className="form-label">Téléphone (optionnel)</label>
-          <input className="input" value={form.phone} onChange={set('phone')} placeholder="+33 6 00 00 00 00" />
-        </div>
+        </Field>
+        <Field label="Téléphone">
+          <input
+            className="input"
+            value={form.phone}
+            onChange={set('phone')}
+            placeholder="+33 6 00 00 00 00"
+            inputMode="tel"
+          />
+        </Field>
+      </div>
+
+      {/* Règle livraison — rappel ferme */}
+      <div style={{
+        padding: '10px 14px',
+        borderRadius: 8,
+        background: 'rgba(255,255,255,0.02)',
+        border: '1px solid var(--border)',
+        fontSize: 12,
+        color: 'var(--text-3)',
+        display: 'flex',
+        gap: 8,
+        alignItems: 'flex-start',
+      }}>
+        <span>🚚</span>
+        <span>
+          <strong style={{ color: 'var(--text-2)' }}>Livraison 10€</strong> sur toute commande inférieure à 30€.
+          Offerte automatiquement dès 30€ de panier.
+        </span>
       </div>
 
       {error && <p className="form-error">{error}</p>}
 
-      <div style={{ display: 'flex', gap: 10 }}>
+      <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
         {onCancel && (
           <button className="btn btn-ghost" onClick={onCancel} type="button">Annuler</button>
         )}
         <button
           className="btn btn-primary"
           onClick={handleSubmit}
-          disabled={loading || !form.label || !form.full_name || !form.line1 || !form.city || !form.postal_code}
+          disabled={loading || !isValid}
+          style={{ flex: 1 }}
         >
-          {loading ? 'Enregistrement…' : initial ? 'Modifier l\'adresse' : 'Enregistrer l\'adresse'}
+          {loading ? 'Enregistrement…' : initial ? 'Mettre à jour l\'adresse' : 'Enregistrer l\'adresse'}
         </button>
       </div>
     </div>
