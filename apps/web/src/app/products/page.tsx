@@ -16,12 +16,15 @@ function ProductCard({ product }: { product: Product }) {
     e.preventDefault()
     setAdding(true)
     try {
-      await addItem(product.id!, 1)
+      await addItem(product.id, 1)
       setAdded(true)
       setTimeout(() => setAdded(false), 1800)
     } catch {}
     setAdding(false)
   }
+
+  // Prix à afficher : variante 1 mois si dispo, sinon rien (pas de /mois ici)
+  const price1m = product.variants?.[0]?.price ?? null
 
   return (
     <Link href={`/products/${product.slug}`} className={styles.card}>
@@ -29,9 +32,7 @@ function ProductCard({ product }: { product: Product }) {
         {product.image_url ? (
           <img src={`/api${product.image_url}`} alt={product.name} />
         ) : (
-          <div className={styles.imagePlaceholder}>
-            <span>◆</span>
-          </div>
+          <div className={styles.imagePlaceholder}><span>◆</span></div>
         )}
         {product.category && <span className={styles.categoryTag}>{product.category}</span>}
       </div>
@@ -40,16 +41,18 @@ function ProductCard({ product }: { product: Product }) {
         <p className={styles.cardDesc}>{product.short_desc}</p>
         <div className={styles.cardFooter}>
           <span className={styles.price}>
-            {product.price_month_eur != null
-              ? `€${product.price_month_eur.toFixed(2)}/mois`
-              : 'Prix sur demande'}
+            {price1m != null
+              ? `€${price1m.toFixed(2)}`
+              : product.price_month_eur != null
+                ? `€${product.price_month_eur.toFixed(2)}`
+                : 'Sur demande'}
           </span>
           <button
             className={`btn btn-primary btn-sm ${styles.addBtn}`}
             onClick={handleAdd}
             disabled={adding || added}
           >
-            {added ? '✓ Ajouté' : adding ? '...' : 'Ajouter'}
+            {added ? '✓' : adding ? '…' : 'Ajouter'}
           </button>
         </div>
       </div>

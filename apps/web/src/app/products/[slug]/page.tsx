@@ -4,14 +4,8 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { productApi } from '@/services/api'
 import { useCart } from '@/hooks/useCart'
-import type { Product } from '@/types'
+import type { Product, ProductVariant } from '@/types'
 import styles from './page.module.css'
-
-const DURATIONS = [
-  { label: '1 mois', months: 1, discount: 0 },
-  { label: '4 mois', months: 4, discount: 0.10 },
-  { label: '1 an', months: 12, discount: 0.20 },
-]
 
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -19,8 +13,8 @@ export default function ProductDetailPage() {
   const { addItem } = useCart()
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
+  const [variantIdx, setVariantIdx] = useState(0)
   const [qty, setQty] = useState(1)
-  const [duration, setDuration] = useState(0) // index dans DURATIONS
   const [adding, setAdding] = useState(false)
   const [added, setAdded] = useState(false)
   const [error, setError] = useState('')
@@ -46,13 +40,6 @@ export default function ProductDetailPage() {
     setAdding(false)
   }
 
-  const computePrice = () => {
-    if (!product?.price_month_eur) return null
-    const d = DURATIONS[duration]
-    const base = product.price_month_eur * d.months
-    return base * (1 - d.discount)
-  }
-
   if (loading) return (
     <div className="container" style={{ paddingTop: 80, paddingBottom: 80 }}>
       <div className={styles.skeletonLayout}>
@@ -69,12 +56,19 @@ export default function ProductDetailPage() {
   if (!product) return (
     <div className="container" style={{ paddingTop: 80, textAlign: 'center' }}>
       <p className="text-muted">Produit introuvable.</p>
-      <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={() => router.push('/products')}>Retour aux produits</button>
+      <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={() => router.push('/products')}>
+        Retour aux produits
+      </button>
     </div>
   )
 
-  const totalPrice = computePrice()
-  const d = DURATIONS[duration]
+  const variants: ProductVariant[] = product.variants ?? []
+  const hasVariants = variants.length > 0
+  const selected = variants[variantIdx] ?? null
+
+  // Prix à afficher — variante sélectionnée si dispo, sinon prix mensuel de ref
+  const displayPrice = selected?.price ?? null
+  const displayQty = selected?.qty_g ?? null
 
   return (
     <div className="container" style={{ paddingTop: 60, paddingBottom: 80 }}>
@@ -106,70 +100,93 @@ export default function ProductDetailPage() {
 
           <div className={styles.divider} />
 
-          {/* Variantes de durée */}
-          {product.price_month_eur != null && (
+          {/* Sélecteur de variantes */}
+          {hasVariants && (
             <div style={{ marginBottom: 20 }}>
-              <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Quantité</p>
+              <p style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                Durée d&apos;approvisionnement
+              </p>
               <div style={{ display: 'flex', gap: 8 }}>
-                {DURATIONS.map((d, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setDuration(i)}
-                    style={{
-                      flex: 1,
-                      padding: '10px 8px',
-                      borderRadius: 10,
-                      border: duration === i ? '1px solid var(--accent)' : '1px solid var(--border)',
-                      background: duration === i ? 'rgba(255,214,102,0.08)' : 'var(--glass-bg)',
-                      color: duration === i ? 'var(--accent)' : 'var(--text-2)',
-                      cursor: 'pointer',
-                      fontSize: 13,
-                      fontWeight: duration === i ? 600 : 400,
-                      transition: 'all 0.15s',
-                      position: 'relative',
-                    }}
-                  >
-                    {d.label}
-                    {d.discount > 0 && (
-                      <span style={{
-                        position: 'absolute', top: -8, right: -4,
-                        background: 'var(--accent)', color: '#000',
-                        fontSize: 9, fontWeight: 700, padding: '2px 5px',
-                        borderRadius: 6,
-                      }}>-{d.discount * 100}%</span>
-                    )}
-                  </button>
-                ))}
+                {variants.map((v, i) => {
+                  const isActive = variantIdx === i
+                  // Calculer l'économie par rapport à la variante 1 mois
+                  const base1m = variants[0]
+                  const saving = base1m
+                    ? Math.round((1 - (v.price / v.months) / (base1m.price / base1m.months)) * 100)
+                    : 0
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => setVariantIdx(i)}
+                      style={{
+                        flex: 1,
+                        padding: '12px 8px',
+                        borderRadius: 12,
+                        border: isActive ? '1.5px solid var(--accent)' : '1px solid var(--border)',
+                        background: isActive ? 'rgba(255,214,102,0.08)' : 'var(--glass-bg)',
+                        color: isActive ? 'var(--accent)' : 'var(--text-2)',
+                        cursor: 'pointer',
+                        fontSize: 13,
+                        fontWeight: isActive ? 600 : 400,
+                        transition: 'all 0.15s',
+                        position: 'relative',
+                        textAlign: 'center',
+                      }}
+                    >
+                      <div style={{ fontWeight: 600 }}>{v.label}</div>
+                      <div style={{ fontSize: 11, marginTop: 2, color: isActive ? 'var(--accent)' : 'var(--text-3)' }}>
+                        €{v.price.toFixed(2)}
+                      </div>
+                      {saving > 0 && (
+                        <span style={{
+                          position: 'absolute', top: -8, right: -4,
+                          background: 'var(--accent)', color: '#000',
+                          fontSize: 9, fontWeight: 700, padding: '2px 5px',
+                          borderRadius: 6, lineHeight: 1.4,
+                        }}>-{saving}%</span>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )}
 
-          {/* Prix total */}
+          {/* Bloc prix */}
           <div className={styles.pricing}>
-            <div className={styles.price}>
-              {totalPrice != null ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                    <span className={styles.priceAmount}>€{totalPrice.toFixed(2)}</span>
-                    <span style={{ fontSize: 13, color: 'var(--text-3)' }}>pour {d.label}</span>
-                  </div>
-                  {d.months > 1 && (
-                    <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
-                      soit €{(totalPrice / d.months).toFixed(2)}/mois
+            {displayPrice != null ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                  <span className={styles.priceAmount}>€{displayPrice.toFixed(2)}</span>
+                  {selected && (
+                    <span style={{ fontSize: 13, color: 'var(--text-3)' }}>
+                      pour {selected.label}
                     </span>
                   )}
                 </div>
-              ) : (
-                <span className={styles.priceAmount}>Prix sur demande</span>
-              )}
-            </div>
+                {selected && selected.months > 1 && (
+                  <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                    soit €{(displayPrice / selected.months).toFixed(2)}/mois
+                  </span>
+                )}
+                {displayQty != null && (
+                  <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                    {displayQty >= 1000
+                      ? `${(displayQty / 1000).toFixed(2).replace('.00', '')} kg`
+                      : `${displayQty} g`}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <span className={styles.priceAmount}>Prix sur demande</span>
+            )}
           </div>
 
-          {/* Livraison */}
-          <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 16 }}>
-            {totalPrice && totalPrice >= 30
+          {/* Info livraison */}
+          <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '8px 0 16px' }}>
+            {displayPrice && displayPrice >= 30
               ? '✓ Livraison offerte'
-              : 'Livraison 10€ (offerte dès 30€)'}
+              : 'Livraison 10€ · offerte dès 30€ d\'achat'}
           </p>
 
           <div className={styles.addToCart}>

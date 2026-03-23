@@ -20,12 +20,20 @@ export interface Address {
 export interface AddressIn {
   label: string
   full_name: string
-  line1: string
+  line1?: string
   line2?: string
   city: string
   postal_code: string
   country: string
   phone?: string
+}
+
+/** Variante de vente — prix et quantité réels issus du backend */
+export interface ProductVariant {
+  price: number   // prix TTC pour cette variante
+  qty_g: number   // quantité en grammes
+  label: string   // "1 mois", "3 mois", "1 an"
+  months: number  // 1, 3, 12
 }
 
 export interface Product {
@@ -35,10 +43,13 @@ export interface Product {
   short_desc: string
   description_md: string
   category: string
+  /** Prix mensuel de référence — affiché sur la page Stack uniquement */
   price_month_eur: number | null
   image_url: string | null
   stock_qty?: number | null
   is_active?: boolean
+  /** Variantes de vente renvoyées par l'API */
+  variants: ProductVariant[]
 }
 
 export interface CartItem {

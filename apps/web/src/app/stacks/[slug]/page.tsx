@@ -8,10 +8,11 @@ import { useCart } from '@/hooks/useCart'
 import type { Stack } from '@/types'
 import styles from './page.module.css'
 
+// Durées d'abonnement — seul endroit où le prix mensuel est affiché
 const DURATIONS = [
-  { label: '1 mois', months: 1, discount: 0 },
-  { label: '4 mois', months: 4, discount: 0.10 },
-  { label: '1 an', months: 12, discount: 0.20 },
+  { label: '1 mois',  months: 1,  discount: 0 },
+  { label: '3 mois',  months: 3,  discount: 0.10 },
+  { label: '1 an',    months: 12, discount: 0.20 },
 ]
 
 export default function StackDetailPage() {
@@ -25,15 +26,21 @@ export default function StackDetailPage() {
   const [added, setAdded] = useState(false)
 
   useEffect(() => {
-    stackApi.get(slug).then((s: any) => { setStack(s); setLoading(false) }).catch(() => setLoading(false))
+    stackApi.get(slug)
+      .then((s: any) => { setStack(s); setLoading(false) })
+      .catch(() => setLoading(false))
   }, [slug])
 
+  // Somme des prix mensuels de référence de chaque produit du stack
   const totalMonthlyPrice = stack?.products.reduce((sum, sp) => {
-    return sum + (sp.product_price_month_eur || 0)
+    return sum + (sp.product_price_month_eur ?? 0)
   }, 0) ?? 0
 
   const d = DURATIONS[duration]
   const totalPrice = totalMonthlyPrice * d.months * (1 - d.discount)
+  const saving = d.discount > 0
+    ? (totalMonthlyPrice * d.months * d.discount).toFixed(2)
+    : null
 
   const handleAddAll = async () => {
     if (!stack) return
@@ -69,7 +76,7 @@ export default function StackDetailPage() {
       <div className={styles.hero}>
         <div className="container">
           <button className={styles.back} onClick={() => router.back()}>← Stacks</button>
-          <span className={styles.eyebrow}>Stack abonnement</span>
+          <span className={styles.eyebrow}>Abonnement mensuel</span>
           <h1 className={styles.title}>{stack.title}</h1>
           {stack.subtitle && <p className={styles.subtitle}>{stack.subtitle}</p>}
         </div>
@@ -77,30 +84,37 @@ export default function StackDetailPage() {
 
       <div className="container" style={{ paddingBottom: 80 }}>
         <div className={styles.layout}>
+
+          {/* Liste des produits */}
           <div className={styles.products}>
-            <h2 className={styles.sectionTitle}>Produits de ce stack</h2>
+            <h2 className={styles.sectionTitle}>Composition du stack</h2>
             {stack.products.map(sp => (
               <div key={sp.product_slug} className={styles.productCard}>
                 <div className={styles.productInfo}>
-                  <div>
-                    {sp.product_category && <span className={styles.category}>{sp.product_category}</span>}
+                  <div style={{ flex: 1 }}>
+                    {sp.product_category && (
+                      <span className={styles.category}>{sp.product_category}</span>
+                    )}
                     <Link href={`/products/${sp.product_slug}`} className={styles.productName}>
                       {sp.product_name}
                     </Link>
-                    {sp.product_short_desc && <p className={styles.productDesc}>{sp.product_short_desc}</p>}
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                    {(sp.dosage_value || sp.note) && (
-                      <div className={styles.dosage}>
-                        {sp.dosage_value && (
-                          <span className="badge badge-accent">{sp.dosage_value}{sp.dosage_unit}</span>
-                        )}
-                        {sp.note && <p className={styles.dosageNote}>{sp.note}</p>}
-                      </div>
+                    {sp.product_short_desc && (
+                      <p className={styles.productDesc}>{sp.product_short_desc}</p>
                     )}
+                    {sp.note && (
+                      <p className={styles.dosageNote}>{sp.note}</p>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+                    {sp.dosage_value && (
+                      <span className="badge badge-accent">
+                        {sp.dosage_value}{sp.dosage_unit}
+                      </span>
+                    )}
+                    {/* Prix mensuel affiché ici car c'est la page Stack = logique abonnement */}
                     {sp.product_price_month_eur != null && (
                       <span style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 600 }}>
-                        €{sp.product_price_month_eur.toFixed(2)}/mois
+                        €{sp.product_price_month_eur.toFixed(2)}<span style={{ fontWeight: 400, color: 'var(--text-3)' }}>/mois</span>
                       </span>
                     )}
                   </div>
@@ -109,62 +123,79 @@ export default function StackDetailPage() {
             ))}
           </div>
 
+          {/* Sidebar abonnement */}
           <div className={styles.sidebar}>
-            {/* Bloc abonnement */}
-            <div className="card" style={{ marginBottom: 16 }}>
+            <div className="card" style={{ marginBottom: 16, position: 'sticky', top: 80 }}>
               <div className="card-header">
-                <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}>Souscrire à ce stack</h3>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}>
+                  Souscrire à ce stack
+                </h3>
               </div>
               <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
                 {/* Sélecteur durée */}
                 <div>
-                  <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Durée</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                    Durée d&apos;abonnement
+                  </p>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    {DURATIONS.map((dur, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setDuration(i)}
-                        style={{
-                          flex: 1,
-                          padding: '10px 8px',
-                          borderRadius: 10,
-                          border: duration === i ? '1px solid var(--accent)' : '1px solid var(--border)',
-                          background: duration === i ? 'rgba(255,214,102,0.08)' : 'transparent',
-                          color: duration === i ? 'var(--accent)' : 'var(--text-2)',
-                          cursor: 'pointer',
-                          fontSize: 12,
-                          fontWeight: duration === i ? 600 : 400,
-                          position: 'relative',
-                        }}
-                      >
-                        {dur.label}
-                        {dur.discount > 0 && (
-                          <span style={{
-                            position: 'absolute', top: -8, right: -4,
-                            background: 'var(--accent)', color: '#000',
-                            fontSize: 9, fontWeight: 700, padding: '2px 5px',
-                            borderRadius: 6,
-                          }}>-{dur.discount * 100}%</span>
-                        )}
-                      </button>
-                    ))}
+                    {DURATIONS.map((dur, i) => {
+                      const isActive = duration === i
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => setDuration(i)}
+                          style={{
+                            flex: 1,
+                            padding: '10px 6px',
+                            borderRadius: 10,
+                            border: isActive ? '1.5px solid var(--accent)' : '1px solid var(--border)',
+                            background: isActive ? 'rgba(255,214,102,0.08)' : 'transparent',
+                            color: isActive ? 'var(--accent)' : 'var(--text-2)',
+                            cursor: 'pointer',
+                            fontSize: 12,
+                            fontWeight: isActive ? 600 : 400,
+                            position: 'relative',
+                          }}
+                        >
+                          {dur.label}
+                          {dur.discount > 0 && (
+                            <span style={{
+                              position: 'absolute', top: -8, right: -4,
+                              background: 'var(--accent)', color: '#000',
+                              fontSize: 9, fontWeight: 700, padding: '2px 4px',
+                              borderRadius: 5,
+                            }}>-{dur.discount * 100}%</span>
+                          )}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
-                {/* Prix */}
+                {/* Récapitulatif prix */}
                 {totalMonthlyPrice > 0 && (
-                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-                      <span style={{ color: 'var(--text-3)', fontSize: 13 }}>Total {d.label}</span>
-                      <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)' }}>€{totalPrice.toFixed(2)}</span>
+                  <div style={{ background: 'var(--glass-bg)', borderRadius: 12, padding: '14px 16px', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+                      <span style={{ color: 'var(--text-2)', fontSize: 13 }}>Total {d.label}</span>
+                      <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--accent)', letterSpacing: '-0.02em' }}>
+                        €{totalPrice.toFixed(2)}
+                      </span>
                     </div>
-                    <p style={{ fontSize: 12, color: 'var(--text-3)' }}>
-                      soit €{(totalMonthlyPrice * (1 - d.discount)).toFixed(2)}/mois
-                      {d.discount > 0 && ` · économie de €${(totalMonthlyPrice * d.months * d.discount).toFixed(2)}`}
-                    </p>
-                    <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6 }}>
-                      {totalPrice >= 30 ? '✓ Livraison offerte' : 'Livraison 10€ (offerte dès 30€)'}
-                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                        €{(totalMonthlyPrice * (1 - d.discount)).toFixed(2)}/mois
+                        {d.discount > 0 && ` · -${d.discount * 100}% vs mensuel`}
+                      </span>
+                      {saving && (
+                        <span style={{ fontSize: 12, color: 'var(--success, #4ade80)', fontWeight: 500 }}>
+                          Économie de €{saving}
+                        </span>
+                      )}
+                      <span style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>
+                        {totalPrice >= 30 ? '✓ Livraison offerte' : 'Livraison 10€ (offerte dès 30€)'}
+                      </span>
+                    </div>
                   </div>
                 )}
 
@@ -172,16 +203,22 @@ export default function StackDetailPage() {
                   className="btn btn-primary w-full"
                   onClick={handleAddAll}
                   disabled={adding || added}
+                  style={{ height: 48 }}
                 >
-                  {added ? '✓ Ajoutés au panier' : adding ? 'Ajout…' : 'Ajouter tous au panier'}
+                  {added ? '✓ Produits ajoutés au panier' : adding ? 'Ajout en cours…' : 'Ajouter tous au panier'}
                 </button>
+
+                <p style={{ fontSize: 11, color: 'var(--text-3)', textAlign: 'center', lineHeight: 1.5 }}>
+                  Les prix affichés sont des prix de référence mensuelle.<br/>
+                  Choisissez votre variante sur chaque fiche produit.
+                </p>
               </div>
             </div>
 
             {/* Description */}
             {stack.description && (
               <div className="card">
-                <div className="card-header"><h3>À propos de ce stack</h3></div>
+                <div className="card-header"><h3>À propos</h3></div>
                 <div className="card-body">
                   <pre className={styles.descText}>{stack.description}</pre>
                 </div>

@@ -14,6 +14,12 @@ interface AdminProduct {
   price_month_eur: number | null
   image_media_id: number | null
   is_active: boolean
+  price_1m?: number | null
+  qty_g_1m?: number | null
+  price_3m?: number | null
+  qty_g_3m?: number | null
+  price_1y?: number | null
+  qty_g_1y?: number | null
 }
 
 function ProductForm({ initial, onSuccess, onCancel }: {
@@ -28,6 +34,12 @@ function ProductForm({ initial, onSuccess, onCancel }: {
   const [category, setCategory] = useState(initial?.category || '')
   const [price, setPrice] = useState(initial?.price_month_eur?.toString() || '')
   const [isActive, setIsActive] = useState(initial?.is_active ?? true)
+  const [price1m, setPrice1m] = useState(initial?.price_1m?.toString() || '')
+  const [qtyG1m, setQtyG1m] = useState(initial?.qty_g_1m?.toString() || '')
+  const [price3m, setPrice3m] = useState(initial?.price_3m?.toString() || '')
+  const [qtyG3m, setQtyG3m] = useState(initial?.qty_g_3m?.toString() || '')
+  const [price1y, setPrice1y] = useState(initial?.price_1y?.toString() || '')
+  const [qtyG1y, setQtyG1y] = useState(initial?.qty_g_1y?.toString() || '')
   const [benefits, setBenefits] = useState('')
   const [benefitsMode, setBenefitsMode] = useState('replace')
   const [image, setImage] = useState<File | null>(null)
@@ -50,6 +62,12 @@ function ProductForm({ initial, onSuccess, onCancel }: {
       fd.append('benefits', benefits)
       fd.append('benefits_mode', benefitsMode)
       if (image) fd.append('image', image)
+      if (price1m) fd.append('price_1m', price1m)
+      if (qtyG1m)  fd.append('qty_g_1m', qtyG1m)
+      if (price3m) fd.append('price_3m', price3m)
+      if (qtyG3m)  fd.append('qty_g_3m', qtyG3m)
+      if (price1y) fd.append('price_1y', price1y)
+      if (qtyG1y)  fd.append('qty_g_1y', qtyG1y)
     } else {
       if (name !== initial.name) fd.append('name', name)
       if (shortDesc !== initial.short_desc) fd.append('short_desc', shortDesc)
@@ -59,6 +77,12 @@ function ProductForm({ initial, onSuccess, onCancel }: {
       fd.append('is_active', String(isActive))
       if (benefits) { fd.append('benefits', benefits); fd.append('benefits_mode', benefitsMode) }
       if (image) fd.append('image', image)
+      fd.append('price_1m', price1m)
+      fd.append('qty_g_1m', qtyG1m)
+      fd.append('price_3m', price3m)
+      fd.append('qty_g_3m', qtyG3m)
+      fd.append('price_1y', price1y)
+      fd.append('qty_g_1y', qtyG1y)
     }
 
     try {
