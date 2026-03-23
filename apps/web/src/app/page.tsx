@@ -34,13 +34,13 @@ const PILLARS = [
   {
     num: '02',
     title: 'Prix/kg transparent',
-    body: 'Notre grille tarifaire est construite à partir du coût au kilo d'actif, pas à partir d'un prix de marché. Vous payez la matière, pas le packaging.',
+    body: "Notre grille tarifaire est construite à partir du coût au kilo d'actif, pas à partir d'un prix de marché. Vous payez la matière, pas le packaging.",
     accent: '#8fb1ff',
   },
   {
     num: '03',
     title: 'Abonnement vs unitaire',
-    body: 'Deux logiques clairement séparées : achat ponctuel sur les fiches produit, abonnement mensuel sur les Stacks. Jamais mélangé.',
+    body: "Deux logiques clairement séparées : achat ponctuel sur les fiches produit, abonnement mensuel sur les Stacks. Jamais mélangé.",
     accent: '#52d0a8',
   },
 ]
