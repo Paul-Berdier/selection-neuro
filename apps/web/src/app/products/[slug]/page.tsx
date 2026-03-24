@@ -122,9 +122,10 @@ export default function ProductDetailPage() {
           <div className={styles.divider} />
 
           {product.description && (
-            <div className={styles.description}>
-              <pre className={styles.descPre}>{product.description}</pre>
-            </div>
+            <div
+              className={styles.description}
+              dangerouslySetInnerHTML={{ __html: product.description }}
+            />
           )}
 
           <div className={styles.divider} />

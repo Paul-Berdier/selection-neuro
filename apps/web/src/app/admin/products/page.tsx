@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import RichEditor from '@/components/editor/RichEditor'
 import { adminProductApi } from '@/services/api'
 import styles from './page.module.css'
 
@@ -126,7 +127,11 @@ function ProductForm({ initial, onSuccess, onCancel }: {
       </div>
       <div className="form-group">
         <label className="form-label">Description</label>
-        <textarea className="textarea" value={descMd} onChange={e => setDescMd(e.target.value)} rows={5} />
+        <RichEditor
+          value={descMd}
+          onChange={setDescMd}
+          placeholder="Rédigez la description du produit — effets documentés, études scientifiques…"
+        />
       </div>
       <div className="form-grid">
         <div className="form-group">

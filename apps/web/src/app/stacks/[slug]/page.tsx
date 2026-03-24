@@ -276,7 +276,7 @@ export default function StackDetailPage() {
               <div className="card">
                 <div className="card-header"><h3>À propos</h3></div>
                 <div className="card-body">
-                  <pre className={styles.descText}>{stack.description}</pre>
+                  <div dangerouslySetInnerHTML={{ __html: stack.description }} className={styles.descText} />
                 </div>
               </div>
             )}

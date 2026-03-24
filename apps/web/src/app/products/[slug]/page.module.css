@@ -173,3 +173,14 @@
   .layout, .skeletonLayout { grid-template-columns: 1fr; }
   .imageWrap { position: static; aspect-ratio: 4/3; }
 }
+
+/* Rich HTML description */
+.description h1 { font-size: 20px; font-weight: 700; color: var(--text); margin: 20px 0 8px; }
+.description h2 { font-size: 17px; font-weight: 700; color: var(--text); margin: 16px 0 6px; }
+.description h3 { font-size: 15px; font-weight: 600; color: var(--text-2); margin: 12px 0 4px; }
+.description p  { font-size: 14px; color: var(--text-2); line-height: 1.7; margin-bottom: 10px; }
+.description strong { color: var(--text); font-weight: 600; }
+.description em { font-style: italic; color: var(--text-3); }
+.description ul, .description ol { margin: 8px 0 12px 18px; }
+.description li { font-size: 14px; color: var(--text-2); margin-bottom: 4px; line-height: 1.6; }
+.description a  { color: var(--accent); text-decoration: underline; }
