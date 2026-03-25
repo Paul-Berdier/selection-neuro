@@ -7,8 +7,8 @@ import Footer from '@/components/layout/Footer'
 import UTMCapture from '@/components/UTMCapture'
 
 export const metadata: Metadata = {
-  title: 'Sélection Neuro — Soutien cognitif',
-  description: 'Compléments nootropiques en formes actives, dosages cliniques. Blagnac, Toulouse.',
+  title: 'Labstock — Actifs nootropiques',
+  description: 'Actifs nootropiques à doses cliniques. Prix au kilo transparent. Blagnac, Toulouse.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

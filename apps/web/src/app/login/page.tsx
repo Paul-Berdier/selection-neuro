@@ -49,7 +49,7 @@ function LoginContent() {
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        <div className={styles.logo}>◆ Sélection Neuro</div>
+        <div className={styles.logo}>◆ Labstock</div>
         <h1 className={styles.title}>Bon retour</h1>
         <p className={styles.subtitle}>Connexion à votre compte</p>
         {registered && (
