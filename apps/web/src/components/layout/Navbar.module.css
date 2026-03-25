@@ -2,10 +2,10 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(5, 8, 19, 0.72);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(251, 248, 244, 0.7);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  border-bottom: 1px solid rgba(18, 18, 18, 0.06);
   height: 72px;
 }
 
@@ -29,13 +29,14 @@
   width: 32px;
   height: 32px;
   border-radius: 12px;
-  background: linear-gradient(135deg, rgba(74,121,255,0.95), rgba(255,214,102,0.9));
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(239,236,230,0.94));
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   position: relative;
-  box-shadow: 0 10px 24px rgba(74,121,255,0.24);
+  border: 1px solid rgba(18, 18, 18, 0.08);
+  box-shadow: 0 12px 28px rgba(132, 121, 102, 0.1);
 }
 
 .logoMark::before {
@@ -43,7 +44,7 @@
   width: 14px;
   height: 14px;
   clip-path: polygon(40% 0, 100% 0, 66% 44%, 100% 44%, 28% 100%, 48% 56%, 16% 56%);
-  background: #09101f;
+  background: #171714;
 }
 
 .logoName {
@@ -89,14 +90,14 @@
 .nav a:hover,
 .nav a.active {
   color: var(--text);
-  background: rgba(255,255,255,0.05);
-  border-color: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.68);
+  border-color: rgba(18,18,18,0.06);
 }
 
 .nav a.active {
-  color: #08101f;
-  background: linear-gradient(135deg, var(--accent-2), #84a8ff);
-  border-color: rgba(143,177,255,0.36);
+  color: var(--text);
+  background: rgba(255,255,255,0.92);
+  border-color: rgba(18,18,18,0.08);
 }
 
 .actions {
@@ -114,8 +115,8 @@
   width: 42px;
   height: 42px;
   border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(18,18,18,0.08);
+  background: rgba(255,255,255,0.62);
   color: var(--text);
   transition: transform 0.15s, background 0.15s, border-color 0.15s;
 }
@@ -123,16 +124,16 @@
 .iconBtn:hover,
 .cartBtn:hover {
   transform: translateY(-1px);
-  background: rgba(255,255,255,0.08);
-  border-color: rgba(143,177,255,0.3);
+  background: rgba(255,255,255,0.88);
+  border-color: rgba(18,18,18,0.12);
 }
 
 .cartBadge {
   position: absolute;
   top: -5px;
   right: -2px;
-  background: var(--accent);
-  color: #07101f;
+  background: #151515;
+  color: #ffffff;
   font-size: 10px;
   font-weight: 800;
   min-width: 18px;
