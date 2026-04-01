@@ -126,13 +126,15 @@ class SecureHeadersMiddleware(BaseHTTPMiddleware):
         )
 
         # HSTS — only on non-localhost
-        if "localhost" not in request.url.hostname:
+        hostname = request.url.hostname or ""
+        if hostname and hostname not in {"localhost", "127.0.0.1"}:
             response.headers["Strict-Transport-Security"] = (
                 "max-age=31536000; includeSubDomains; preload"
             )
 
-        # Remove server header
-        response.headers.pop("server", None)
+        # Remove server header if already present on the response
+        if "server" in response.headers:
+            del response.headers["server"]
 
         return response
 
