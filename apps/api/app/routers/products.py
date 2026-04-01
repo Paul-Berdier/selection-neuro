@@ -38,6 +38,7 @@ def to_product_out(p) -> ProductOut:
         category=getattr(p, "category", "") or "",
         price_month_eur=float(price) if price is not None else None,
         image_url=f"/media/{p.image_media_id}" if getattr(p, "image_media_id", None) else None,
+        image_url_2=f"/media/{p.image_media_id_2}" if getattr(p, "image_media_id_2", None) else None,
         variants=_build_variants(p),
     )
 

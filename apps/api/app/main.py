@@ -6,6 +6,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.logging import setup_logging
 from app.core.migrate import run_migrations
+from app.core.middleware import (
+    RateLimitMiddleware,
+    SecureHeadersMiddleware,
+    RequestValidationMiddleware,
+)
 
 from app.routers.health import router as health_router
 from app.routers.products import router as products_router
@@ -22,7 +27,6 @@ from app.routers.addresses import router as addresses_router
 from app.routers.admin_inventory import router as admin_inventory_router
 from app.routers.admin_orders import router as admin_orders_router
 from app.routers.shipping import router as shipping_router
-from app.routers.debug_env import router as debug_env_router
 from app.routers.contact import router as contact_router
 
 setup_logging()
@@ -34,9 +38,14 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Stripe-Signature"],
 )
+
+# ── Security middleware stack (order matters: outermost first) ──
+app.add_middleware(RequestValidationMiddleware)
+app.add_middleware(SecureHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware)
 
 
 @app.get("/", tags=["meta"])
@@ -59,5 +68,4 @@ app.include_router(addresses_router)
 app.include_router(admin_inventory_router)
 app.include_router(admin_orders_router)
 app.include_router(shipping_router)
-app.include_router(debug_env_router)
 app.include_router(contact_router)

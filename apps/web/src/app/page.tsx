@@ -6,6 +6,7 @@ import { productApi, stackApi } from '@/services/api'
 import type { Product, Stack } from '@/types'
 import styles from './page.module.css'
 
+/* ── Intersection observer hook ─────────────────────────────── */
 function useInView() {
   const [el, setEl] = useState<HTMLElement | null>(null)
   const [visible, setVisible] = useState(false)
@@ -18,13 +19,39 @@ function useInView() {
   return { ref: setEl as any, visible }
 }
 
+/* ── Categories (benefits) ──────────────────────────────────── */
+const CATEGORIES = ['Mémoire', 'Attention', 'Énergie mentale', 'Neuroprotection', 'Plasticité'] as const
+
+/* ── Product card with hover image swap ─────────────────────── */
 function ProductCard({ p, idx }: { p: Product; idx: number }) {
+  const [hovered, setHovered] = useState(false)
   const v1m = p.variants?.find(v => v.months === 1)
+  const showImg2 = hovered && !!p.image_url_2
+
   return (
-    <Link href={`/products/${p.slug}`} className={styles.productCard} style={{ '--i': idx } as any}>
+    <Link
+      href={`/products/${p.slug}`}
+      className={styles.productCard}
+      style={{ '--i': idx } as any}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <div className={styles.productCardInner}>
         {p.image_url ? (
-          <div className={styles.productImg}><img src={`/api${p.image_url}`} alt={p.name} /></div>
+          <div className={styles.productImg}>
+            <img
+              src={`/api${p.image_url}`}
+              alt={p.name}
+              className={`${styles.productImgEl} ${showImg2 ? styles.productImgHidden : ''}`}
+            />
+            {p.image_url_2 && (
+              <img
+                src={`/api${p.image_url_2}`}
+                alt={`${p.name} — vue 2`}
+                className={`${styles.productImgEl} ${styles.productImgAlt} ${showImg2 ? styles.productImgAltVisible : ''}`}
+              />
+            )}
+          </div>
         ) : (
           <div className={styles.productImgEmpty}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
@@ -48,70 +75,55 @@ function ProductCard({ p, idx }: { p: Product; idx: number }) {
   )
 }
 
+/* ── Main page ──────────────────────────────────────────────── */
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([])
+  const [allProducts, setAllProducts] = useState<Product[]>([])
   const [stacks, setStacks] = useState<Stack[]>([])
   const [loading, setLoading] = useState(true)
+  const [activeChip, setActiveChip] = useState<string | null>(null)
 
   const productsRef = useInView()
   const pillarsRef = useInView()
   const stacksRef = useInView()
 
   useEffect(() => {
-    productApi.list({ limit: 6 } as any)
-      .then((r: any) => { setProducts((r.items ?? r).slice(0, 6)); setLoading(false) })
+    productApi.list({ limit: 50 } as any)
+      .then((r: any) => {
+        const items = (r.items ?? r) as Product[]
+        setAllProducts(items)
+        setProducts(items.slice(0, 6))
+        setLoading(false)
+      })
       .catch(() => setLoading(false))
     stackApi.list()
       .then((r: any) => setStacks((r.items ?? r).slice(0, 2)))
       .catch(() => {})
   }, [])
 
+  /* ── Chip filter logic — filter in-place, no reorg ── */
+  const handleChipClick = (chip: string) => {
+    if (activeChip === chip) {
+      setActiveChip(null)
+      setProducts(allProducts.slice(0, 6))
+    } else {
+      setActiveChip(chip)
+      const q = chip.toLowerCase()
+      const filtered = allProducts.filter(p =>
+        p.category?.toLowerCase().includes(q) ||
+        p.name?.toLowerCase().includes(q) ||
+        p.short_desc?.toLowerCase().includes(q)
+      )
+      setProducts(filtered.length > 0 ? filtered : allProducts.slice(0, 6))
+    }
+  }
+
   return (
     <div className={styles.page}>
 
-      {/* ══ HERO — mobile first, gabarit : image > texte > CTA > chips ══ */}
+      {/* ══ HERO — clean, no bento ══ */}
       <section className={styles.hero}>
-
-        {/* Image zone */}
-        <div className={styles.heroImage}>
-          <div className={styles.heroImageInner}>
-            {/* Illustration laboratoire — grille bento moléculaire */}
-            <div className={styles.bentoHero}>
-              <div className={`${styles.bentoCell} ${styles.bentoCellLg}`}>
-                <span className={styles.bentoLabel}>Actifs vérifiés</span>
-                <div className={styles.bentoValue}>17</div>
-                <span className={styles.bentoSub}>références cataloguées</span>
-              </div>
-              <div className={`${styles.bentoCell} ${styles.bentoCellSm}`}>
-                <span className={styles.bentoLabel}>Dose</span>
-                <div className={styles.bentoValueSm}>100%</div>
-                <span className={styles.bentoSub}>clinique</span>
-              </div>
-              <div className={`${styles.bentoCell} ${styles.bentoCellSm}`}>
-                <span className={styles.bentoLabel}>Prix/kg</span>
-                <div className={styles.bentoValueSm}>affiché</div>
-                <span className={styles.bentoSub}>transparent</span>
-              </div>
-              <div className={`${styles.bentoCell} ${styles.bentoCellMd}`}>
-                <span className={styles.bentoLabel}>Citicoline</span>
-                <div className={styles.bentoValueSm}>CDP-Choline</div>
-                <span className={styles.bentoSub}>1 000 mg / j</span>
-              </div>
-              <div className={`${styles.bentoCell} ${styles.bentoCellMd}`}>
-                <span className={styles.bentoLabel}>Lion's Mane</span>
-                <div className={styles.bentoValueSm}>Hericium</div>
-                <span className={styles.bentoSub}>2 000 mg / j</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Texte zone */}
         <div className={styles.heroText}>
-          <div className={styles.heroEyebrow}>
-            <span className={styles.heroDot} />
-            Labstock · Blagnac
-          </div>
           <h1 className={styles.heroTitle}>
             Nootropiques à doses réelles.
           </h1>
@@ -131,15 +143,40 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* Chips bénéfices */}
+        {/* Chips bénéfices — CLICKABLE */}
         <div className={styles.heroChips}>
-          {['Mémoire', 'Attention', 'Énergie mentale', 'Neuroprotection', 'Plasticité'].map(c => (
-            <span key={c} className={styles.chip}>{c}</span>
+          {CATEGORIES.map(c => (
+            <button
+              key={c}
+              className={`${styles.chip} ${activeChip === c ? styles.chipActive : ''}`}
+              onClick={() => handleChipClick(c)}
+              type="button"
+            >
+              {c}
+            </button>
           ))}
+        </div>
+
+        {/* Hero metrics — compact, liquid glass */}
+        <div className={styles.heroMetrics}>
+          <div className={styles.metric}>
+            <span className={styles.metricValue}>17</span>
+            <span className={styles.metricLabel}>actifs vérifiés</span>
+          </div>
+          <div className={styles.metricDivider} />
+          <div className={styles.metric}>
+            <span className={styles.metricValue}>100%</span>
+            <span className={styles.metricLabel}>dose clinique</span>
+          </div>
+          <div className={styles.metricDivider} />
+          <div className={styles.metric}>
+            <span className={styles.metricValue}>€/kg</span>
+            <span className={styles.metricLabel}>prix transparent</span>
+          </div>
         </div>
       </section>
 
-      {/* ══ SHIPPING RULE — ferme et visible ══ */}
+      {/* ══ SHIPPING RULE ══ */}
       <div className={styles.shippingBar}>
         <div className="container">
           <div className={styles.shippingInner}>
@@ -158,7 +195,9 @@ export default function Home() {
           <div className={styles.sectionHead}>
             <div>
               <div className={styles.sectionLabel}>Catalogue</div>
-              <h2 className={styles.sectionTitle}>Actifs disponibles</h2>
+              <h2 className={styles.sectionTitle}>
+                {activeChip ? `Actifs — ${activeChip}` : 'Actifs disponibles'}
+              </h2>
             </div>
             <Link href="/products" className={styles.seeAll}>Tout voir →</Link>
           </div>
@@ -171,6 +210,15 @@ export default function Home() {
               : products.map((p, i) => <ProductCard key={p.slug} p={p} idx={i} />)
             }
           </div>
+
+          {!loading && products.length === 0 && (
+            <div className={styles.emptyState}>
+              <p>Aucun produit trouvé pour cette catégorie.</p>
+              <button className="btn btn-secondary btn-sm" onClick={() => { setActiveChip(null); setProducts(allProducts.slice(0, 6)) }}>
+                Voir tous les produits
+              </button>
+            </div>
+          )}
         </div>
       </section>
 

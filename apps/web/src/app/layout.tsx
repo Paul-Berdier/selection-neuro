@@ -7,8 +7,8 @@ import Footer from '@/components/layout/Footer'
 import UTMCapture from '@/components/UTMCapture'
 
 export const metadata: Metadata = {
-  title: 'Labstock — Actifs nootropiques',
-  description: 'Actifs nootropiques à doses cliniques. Prix au kilo transparent. Blagnac, Toulouse.',
+  title: 'Labstock — Nootropiques à doses cliniques',
+  description: 'Actifs nootropiques à doses cliniques. Prix au kilo transparent.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

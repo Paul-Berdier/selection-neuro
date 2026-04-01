@@ -19,9 +19,15 @@ class Product(Base):
 
     category: Mapped[str] = mapped_column(String(80), default="")
     image_media_id: Mapped[int | None] = mapped_column(
-        ForeignKey("media.id", ondelete="SET NULL"), nullable=True
+        ForeignKey("media.id", ondelete="SET NULL", name="fk_product_image1"), nullable=True
     )
-    image_media = relationship("Media", lazy="joined")
+    image_media = relationship("Media", foreign_keys=[image_media_id], lazy="joined")
+
+    # ── Second image (hover / variant) ──
+    image_media_id_2: Mapped[int | None] = mapped_column(
+        ForeignKey("media.id", ondelete="SET NULL", name="fk_product_image2"), nullable=True
+    )
+    image_media_2 = relationship("Media", foreign_keys=[image_media_id_2], lazy="joined")
 
     # Prix mensuel de RÉFÉRENCE — affiché sur la page Stack uniquement
     price_month_eur: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)

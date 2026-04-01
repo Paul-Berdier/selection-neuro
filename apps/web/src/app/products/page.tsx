@@ -11,6 +11,7 @@ function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart()
   const [adding, setAdding] = useState(false)
   const [added, setAdded] = useState(false)
+  const [hovered, setHovered] = useState(false)
 
   const handleAdd = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -23,14 +24,32 @@ function ProductCard({ product }: { product: Product }) {
     setAdding(false)
   }
 
-  // Prix à afficher : variante 1 mois si dispo, sinon rien (pas de /mois ici)
   const price1m = product.variants?.[0]?.price ?? null
+  const showImg2 = hovered && !!product.image_url_2
 
   return (
-    <Link href={`/products/${product.slug}`} className={styles.card}>
+    <Link
+      href={`/products/${product.slug}`}
+      className={styles.card}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <div className={styles.cardImage}>
         {product.image_url ? (
-          <img src={`/api${product.image_url}`} alt={product.name} />
+          <>
+            <img
+              src={`/api${product.image_url}`}
+              alt={product.name}
+              className={showImg2 ? styles.imgHidden : ''}
+            />
+            {product.image_url_2 && (
+              <img
+                src={`/api${product.image_url_2}`}
+                alt={`${product.name} — vue 2`}
+                className={`${styles.imgAlt} ${showImg2 ? styles.imgAltVisible : ''}`}
+              />
+            )}
+          </>
         ) : (
           <div className={styles.imagePlaceholder}><span>◆</span></div>
         )}

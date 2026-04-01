@@ -13,7 +13,7 @@ from app.models.user import User
 from app.models.order import Order
 from app.models.stripe_event import StripeEvent
 from app.schemas.payments import CheckoutSessionIn, CheckoutSessionOut
-from app.services.stripe_service import create_checkout_session
+from app.services.stripe_service import create_checkout_session, StripeLineItem
 
 router = APIRouter(prefix="/payments/stripe", tags=["payments"])
 
@@ -35,11 +35,34 @@ def stripe_checkout_session(
     if amount <= 0:
         raise HTTPException(status_code=400, detail="Order amount invalid")
 
+    # Build detailed line items for Stripe receipt
+    _ = order.items  # ensure loaded
+    line_items = []
+    for it in order.items:
+        line_items.append(StripeLineItem(
+            name=it.product_name,
+            amount_eur=float(it.unit_price),
+            quantity=it.quantity,
+        ))
+
+    # Add tax as a visible line item if applicable
+    tax_amount = float(order.tax_amount or 0)
+    if tax_amount > 0:
+        line_items.append(StripeLineItem(
+            name="TVA (20%)",
+            amount_eur=tax_amount,
+            quantity=1,
+        ))
+
+    shipping_amount = float(order.shipping_amount or 0)
+
     sess = create_checkout_session(
         order_id=order.id,
         amount_eur=amount,
         currency=order.currency or "EUR",
         customer_email=user.email,
+        line_items=line_items,
+        shipping_amount=shipping_amount,
     )
 
     order.payment_provider = "stripe"

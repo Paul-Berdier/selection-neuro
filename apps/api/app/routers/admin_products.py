@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Upload
 from sqlalchemy.orm import Session
 
 from app.core.deps import require_admin
+from app.core.sanitize import sanitize_html
 from app.db.session import get_db
 from app.models import Benefit, Product, ProductBenefit
 from app.models.media import Media
@@ -84,7 +85,7 @@ def upsert_product(db: Session, slug: str, **fields) -> Product:
     obj = db.query(Product).filter(Product.slug == slug).first()
     if obj:
         for k, v in fields.items():
-            if v is not None or k == "image_media_id":
+            if v is not None or k in ("image_media_id", "image_media_id_2"):
                 setattr(obj, k, v)
         return obj
     obj = Product(slug=slug, **fields)
@@ -126,6 +127,7 @@ def product_to_dict(p: Product) -> dict:
         "category": p.category,
         "price_month_eur": _f(p.price_month_eur),
         "image_media_id": p.image_media_id,
+        "image_media_id_2": p.image_media_id_2,
         "is_active": p.is_active,
         "stock_qty": p.stock_qty,
         # Variantes de vente
@@ -157,6 +159,7 @@ async def admin_create_product(
     benefits: str = Form(""),
     benefits_mode: str = Form("append"),
     image: UploadFile | None = File(None),
+    image2: UploadFile | None = File(None),
 ):
     pslug = slugify(slug or name)
 
@@ -167,17 +170,25 @@ async def admin_create_product(
             media = upsert_media(db, content, image.filename or "image")
             image_media_id = media.id
 
+    image_media_id_2: Optional[int] = None
+    if image2 is not None:
+        content2 = await image2.read()
+        if content2:
+            media2 = upsert_media(db, content2, image2.filename or "image2")
+            image_media_id_2 = media2.id
+
     product = upsert_product(
         db, pslug,
         name=name,
         short_desc=short_desc,
-        description=description,
+        description=sanitize_html(description),
         category=category,
         price_month_eur=parse_float_or_none(price_month_eur),
         price_1m=parse_float_or_none(price_1m), qty_g_1m=parse_float_or_none(qty_g_1m),
         price_3m=parse_float_or_none(price_3m), qty_g_3m=parse_float_or_none(qty_g_3m),
         price_1y=parse_float_or_none(price_1y), qty_g_1y=parse_float_or_none(qty_g_1y),
         image_media_id=image_media_id,
+        image_media_id_2=image_media_id_2,
         is_active=is_active,
     )
 
@@ -235,12 +246,13 @@ async def admin_update_product(
     benefits: str = Form(""),
     benefits_mode: str = Form("append"),
     image: UploadFile | None = File(None),
+    image2: UploadFile | None = File(None),
 ):
     product = ensure_product(db, slug)
 
     if name is not None:         product.name = name
     if short_desc is not None:   product.short_desc = short_desc
-    if description is not None:  product.description = description
+    if description is not None:  product.description = sanitize_html(description)
     if category is not None:     product.category = category
     if price_month_eur is not None:
         product.price_month_eur = parse_float_or_none(price_month_eur)
@@ -259,6 +271,12 @@ async def admin_update_product(
         if content:
             media = upsert_media(db, content, image.filename or "image")
             product.image_media_id = media.id
+
+    if image2 is not None:
+        content2 = await image2.read()
+        if content2:
+            media2 = upsert_media(db, content2, image2.filename or "image2")
+            product.image_media_id_2 = media2.id
 
     tags = split_tags(benefits)
     if tags:

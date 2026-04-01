@@ -7,6 +7,16 @@ class RegisterIn(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
 
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Le mot de passe doit contenir au moins 8 caractères")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Le mot de passe doit contenir au moins un chiffre")
+        if not any(c.isalpha() for c in v):
+            raise ValueError("Le mot de passe doit contenir au moins une lettre")
+        return v
+
 
 class LoginIn(BaseModel):
     email: EmailStr

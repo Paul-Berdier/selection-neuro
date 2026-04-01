@@ -46,6 +46,7 @@ export interface Product {
   /** Prix mensuel de référence — affiché sur la page Stack uniquement */
   price_month_eur: number | null
   image_url: string | null
+  image_url_2: string | null
   stock_qty?: number | null
   is_active?: boolean
   /** Variantes de vente renvoyées par l'API */

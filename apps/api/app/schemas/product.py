@@ -20,6 +20,7 @@ class ProductOut(BaseModel):
     # Prix mensuel de référence — page Stack uniquement
     price_month_eur: float | None = None
     image_url: str | None = None
+    image_url_2: str | None = None
     # Variantes de vente exposées sur les fiches produit
     variants: list[ProductVariant] = Field(default_factory=list)
 
