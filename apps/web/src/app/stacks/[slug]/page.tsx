@@ -46,7 +46,7 @@ export default function StackDetailPage() {
     setAdding(true)
     try {
       for (const sp of stack.products) {
-        if (sp.product_id) await addItem(sp.product_id, 1)
+        if (sp.product_id) await addItem(sp.product_id, 1, d.months)
       }
       setAdded(true)
       setTimeout(() => setAdded(false), 2000)

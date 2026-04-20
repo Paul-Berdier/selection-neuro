@@ -8,6 +8,7 @@ from app.db.session import get_db
 from app.models import Cart, CartItem, Product
 from app.models.user import User
 from app.schemas.cart import CartOut, CartItemAddIn, CartItemUpdateIn
+from app.services.product_service import resolve_product_variant
 
 router = APIRouter(prefix="/cart", tags=["cart"])
 
@@ -28,7 +29,21 @@ def cart_to_out(cart: Cart) -> CartOut:
     total_items = 0
 
     for it in cart.items:
-        price = float(getattr(it.product, "price_month_eur", 0) or 0)
+        price = float(getattr(it, "unit_price", 0) or 0)
+        variant_label = getattr(it, "variant_label", None)
+        variant_months = getattr(it, "variant_months", None)
+        variant_qty_g = getattr(it, "variant_qty_g", None)
+
+        if not price or variant_label is None:
+            variant = resolve_product_variant(it.product, variant_months)
+            if variant:
+                price = variant.price
+                variant_label = variant.label
+                variant_months = variant.months
+                variant_qty_g = variant.qty_g
+            else:
+                price = float(getattr(it.product, "price_month_eur", 0) or 0)
+
         subtotal += price * it.quantity
         total_items += it.quantity
 
@@ -45,6 +60,9 @@ def cart_to_out(cart: Cart) -> CartOut:
                 "product_name": it.product.name,
                 "unit_price": round(price, 2),
                 "image_url": image_url,
+                "variant_label": variant_label,
+                "variant_months": variant_months,
+                "variant_qty_g": float(variant_qty_g) if variant_qty_g is not None else None,
             }
         )
 
@@ -79,9 +97,17 @@ def add_item(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
+    variant = resolve_product_variant(product, payload.variant_months)
+    if not variant:
+        raise HTTPException(status_code=400, detail="No sellable variant for this product")
+
     item = (
         db.query(CartItem)
-        .filter(CartItem.cart_id == cart.id, CartItem.product_id == product.id)
+        .filter(
+            CartItem.cart_id == cart.id,
+            CartItem.product_id == product.id,
+            CartItem.variant_months == variant.months,
+        )
         .first()
     )
 
@@ -93,8 +119,19 @@ def add_item(
 
     if item:
         item.quantity = min(99, desired_qty)
+        item.variant_label = variant.label
+        item.variant_qty_g = variant.qty_g
+        item.unit_price = variant.price
     else:
-        item = CartItem(cart_id=cart.id, product_id=product.id, quantity=payload.quantity)
+        item = CartItem(
+            cart_id=cart.id,
+            product_id=product.id,
+            variant_months=variant.months,
+            variant_label=variant.label,
+            variant_qty_g=variant.qty_g,
+            unit_price=variant.price,
+            quantity=payload.quantity,
+        )
         db.add(item)
 
     db.commit()

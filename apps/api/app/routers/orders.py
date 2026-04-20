@@ -11,6 +11,7 @@ from app.models.user import User
 from app.schemas.address import OrderAddressesIn
 from app.schemas.order import OrderListOut, OrderOut
 from app.services.order_pricing import recompute_order_totals
+from app.services.product_service import resolve_product_variant
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
@@ -23,6 +24,9 @@ def order_to_out(order: Order) -> OrderOut:
                 "id": it.id,
                 "product_id": it.product_id,
                 "product_name": it.product_name,
+                "variant_label": getattr(it, "variant_label", None),
+                "variant_months": getattr(it, "variant_months", None),
+                "variant_qty_g": float(it.variant_qty_g) if getattr(it, "variant_qty_g", None) is not None else None,
                 "unit_price": float(it.unit_price),
                 "quantity": it.quantity,
                 "line_total": float(it.line_total),
@@ -92,7 +96,10 @@ def create_order_from_cart(db: Session = Depends(get_db), user: User = Depends(g
                 raise HTTPException(status_code=400, detail=f"Insufficient stock for product {product.id}")
             product.stock_qty -= ci.quantity
 
-        unit_price = float(getattr(product, "price_month_eur", 0) or 0)
+        variant = resolve_product_variant(product, getattr(ci, "variant_months", None))
+        unit_price = float(getattr(ci, "unit_price", 0) or 0)
+        if not unit_price and variant:
+            unit_price = variant.price
         line_total = unit_price * ci.quantity
         total += line_total
 
@@ -101,6 +108,11 @@ def create_order_from_cart(db: Session = Depends(get_db), user: User = Depends(g
                 order_id=order.id,
                 product_id=product.id,
                 product_name=product.name,
+                variant_months=getattr(ci, "variant_months", None) or (variant.months if variant else 1),
+                variant_label=getattr(ci, "variant_label", None) or (variant.label if variant else "1 mois"),
+                variant_qty_g=getattr(ci, "variant_qty_g", None)
+                if getattr(ci, "variant_qty_g", None) is not None
+                else (variant.qty_g if variant else None),
                 unit_price=unit_price,
                 quantity=ci.quantity,
                 line_total=line_total,

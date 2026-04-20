@@ -34,7 +34,7 @@
 
 .card {
   background: linear-gradient(160deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03));
-  border: 1px solid var(--glass-stroke);
+  border: 1px solid var(--border);
   border-radius: 28px; padding: 28px 24px;
   display: flex; flex-direction: column; gap: 14px;
   text-decoration: none; min-height: 200px;
@@ -42,17 +42,23 @@
   backdrop-filter: blur(20px) saturate(140%);
   box-shadow: 0 8px 28px rgba(0,0,0,0.2);
   cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
 }
 .card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 16px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(143,177,255,0.2);
-  border-color: rgba(143,177,255,0.3);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.18);
+  border-color: var(--border-strong);
+}
+.card:focus-visible {
+  box-shadow: 0 0 0 2px rgba(10,10,12,0.08), 0 16px 40px rgba(0,0,0,0.18);
+  border-color: var(--border-strong);
 }
 
 /* Featured first card accent */
 .card:first-child {
-  background: linear-gradient(135deg, rgba(74,121,255,0.14), rgba(255,214,102,0.06), rgba(10,16,40,0.9));
-  border-color: rgba(143,177,255,0.22);
+  background: linear-gradient(160deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05));
+  border-color: var(--border);
   padding: 32px 28px;
 }
 
@@ -67,7 +73,7 @@
 }
 .card:first-child .cardNumber {
   font-size: 4rem;
-  background: linear-gradient(135deg, rgba(143,177,255,0.5), rgba(255,214,102,0.3));
+  background: linear-gradient(135deg, rgba(10,10,12,0.22), rgba(10,10,12,0.08));
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
 }
 
@@ -104,11 +110,11 @@
   transition: border-color 0.15s, color 0.15s;
 }
 .card:first-child .pill {
-  background: rgba(74,121,255,0.14);
-  border-color: rgba(143,177,255,0.28);
-  color: var(--accent-soft);
+  background: rgba(10,10,12,0.04);
+  border-color: var(--border);
+  color: var(--text-2);
 }
-.card:hover .pill { border-color: rgba(255,255,255,0.14); }
+.card:hover .pill { border-color: var(--border-strong); }
 
 .pillMore { font-size: 11px; color: var(--text-3); padding: 4px 4px; }
 

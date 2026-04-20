@@ -10,6 +10,9 @@ class CartItemOut(BaseModel):
     product_name: str
     unit_price: float
     image_url: str | None = None
+    variant_label: str | None = None
+    variant_months: int | None = None
+    variant_qty_g: float | None = None
 
 
 class CartOut(BaseModel):
@@ -22,6 +25,7 @@ class CartOut(BaseModel):
 class CartItemAddIn(BaseModel):
     product_id: int
     quantity: int = Field(default=1, ge=1, le=99)
+    variant_months: int | None = Field(default=None, ge=1)
 
 
 class CartItemUpdateIn(BaseModel):

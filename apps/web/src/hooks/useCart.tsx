@@ -8,7 +8,7 @@ import { useAuth } from './useAuth'
 interface CartContext {
   cart: Cart | null
   loading: boolean
-  addItem: (product_id: number, quantity?: number) => Promise<void>
+  addItem: (product_id: number, quantity?: number, variant_months?: number) => Promise<void>
   updateItem: (item_id: number, quantity: number) => Promise<void>
   removeItem: (item_id: number) => Promise<void>
   refresh: () => Promise<void>
@@ -40,10 +40,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { refresh() }, [refresh])
 
-  const addItem = async (product_id: number, quantity = 1) => {
+  const addItem = async (product_id: number, quantity = 1, variant_months?: number) => {
     setLoading(true)
     try {
-      const c = await cartApi.addItem(product_id, quantity) as Cart
+      const c = await cartApi.addItem(product_id, quantity, variant_months) as Cart
       setCart(c)
     } finally {
       setLoading(false)

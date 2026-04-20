@@ -17,7 +17,7 @@ function ProductCard({ product }: { product: Product }) {
     e.preventDefault()
     setAdding(true)
     try {
-      await addItem(product.id, 1)
+      await addItem(product.id, 1, product.variants?.[0]?.months)
       setAdded(true)
       setTimeout(() => setAdded(false), 1800)
     } catch {}

@@ -60,6 +60,9 @@ export interface CartItem {
   product_name: string
   unit_price: number
   image_url: string | null
+  variant_label?: string | null
+  variant_months?: number | null
+  variant_qty_g?: number | null
 }
 
 export interface Cart {
@@ -73,6 +76,9 @@ export interface OrderItem {
   id: number
   product_id: number
   product_name: string
+  variant_label?: string | null
+  variant_months?: number | null
+  variant_qty_g?: number | null
   unit_price: number
   quantity: number
   line_total: number

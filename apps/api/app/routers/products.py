@@ -5,26 +5,9 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.schemas.product import ProductListOut, ProductOut, ProductVariant
-from app.services.product_service import list_products, get_product_by_slug
+from app.services.product_service import build_product_variants, list_products, get_product_by_slug
 
 router = APIRouter(prefix="/products", tags=["products"])
-
-
-def _build_variants(p) -> list[ProductVariant]:
-    result = []
-    for price_attr, qty_attr, label, months in [
-        ("price_1m", "qty_g_1m", "1 mois",  1),
-        ("price_3m", "qty_g_3m", "3 mois",  3),
-        ("price_1y", "qty_g_1y", "1 an",   12),
-    ]:
-        price = getattr(p, price_attr, None)
-        qty   = getattr(p, qty_attr,   None)
-        if price is not None and qty is not None:
-            result.append(ProductVariant(
-                price=float(price), qty_g=float(qty),
-                label=label, months=months,
-            ))
-    return result
 
 
 def to_product_out(p) -> ProductOut:
@@ -39,7 +22,15 @@ def to_product_out(p) -> ProductOut:
         price_month_eur=float(price) if price is not None else None,
         image_url=f"/media/{p.image_media_id}" if getattr(p, "image_media_id", None) else None,
         image_url_2=f"/media/{p.image_media_id_2}" if getattr(p, "image_media_id_2", None) else None,
-        variants=_build_variants(p),
+        variants=[
+            ProductVariant(
+                price=variant.price,
+                qty_g=variant.qty_g or 0,
+                label=variant.label,
+                months=variant.months,
+            )
+            for variant in build_product_variants(p)
+        ],
     )
 
 

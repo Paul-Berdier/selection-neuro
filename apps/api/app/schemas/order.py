@@ -7,6 +7,9 @@ class OrderItemOut(BaseModel):
     id: int
     product_id: int
     product_name: str
+    variant_label: str | None = None
+    variant_months: int | None = None
+    variant_qty_g: float | None = None
     unit_price: float
     quantity: int
     line_total: float

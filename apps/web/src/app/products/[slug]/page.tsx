@@ -1,16 +1,26 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { productApi } from '@/services/api'
 import { useCart } from '@/hooks/useCart'
 import type { Product, ProductVariant } from '@/types'
 import styles from './page.module.css'
 
+function formatVariantQty(value?: number | null) {
+  if (value == null) return null
+  return value >= 1000
+    ? `${(value / 1000).toFixed(value % 1000 === 0 ? 0 : 2)} kg`
+    : `${value} g`
+}
+
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>()
   const router = useRouter()
   const { addItem } = useCart()
+  const pageRef = useRef<HTMLDivElement>(null)
+  const popupRef = useRef<HTMLDivElement>(null)
+
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [showPopup, setShowPopup] = useState(false)
@@ -19,58 +29,112 @@ export default function ProductDetailPage() {
   const [adding, setAdding] = useState(false)
   const [added, setAdded] = useState(false)
   const [error, setError] = useState('')
-  const popupRef = useRef<HTMLDivElement>(null)
+  const [mobileCtaVisible, setMobileCtaVisible] = useState(false)
 
   useEffect(() => {
     productApi.get(slug).then((p: any) => {
       setProduct(p)
+      setVariantIdx(0)
+      setQty(1)
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [slug])
 
-  // Close popup on outside click
   useEffect(() => {
     if (!showPopup) return
-    const handleClick = (e: MouseEvent) => {
-      if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
+
+    const handleClick = (event: MouseEvent) => {
+      if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
         setShowPopup(false)
       }
     }
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setShowPopup(false)
+
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowPopup(false)
     }
+
     document.addEventListener('mousedown', handleClick)
     document.addEventListener('keydown', handleEsc)
+
     return () => {
       document.removeEventListener('mousedown', handleClick)
       document.removeEventListener('keydown', handleEsc)
     }
   }, [showPopup])
 
-  // Lock body scroll when popup open
   useEffect(() => {
     if (showPopup) {
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = ''
     }
-    return () => { document.body.style.overflow = '' }
+
+    return () => {
+      document.body.style.overflow = ''
+    }
   }, [showPopup])
+
+  useEffect(() => {
+    const root = pageRef.current
+    if (!root) return
+
+    const media = window.matchMedia('(max-width: 767px)')
+    let raf = 0
+    let visible = false
+
+    const updateProgress = () => {
+      const progress = media.matches ? Math.min(window.scrollY / 260, 1) : 0
+      root.style.setProperty('--scroll-progress', progress.toFixed(3))
+
+      const nextVisible = media.matches && progress > 0.18
+      if (visible !== nextVisible) {
+        visible = nextVisible
+        setMobileCtaVisible(nextVisible)
+      }
+
+      raf = 0
+    }
+
+    const requestUpdate = () => {
+      if (raf) return
+      raf = window.requestAnimationFrame(updateProgress)
+    }
+
+    updateProgress()
+    window.addEventListener('scroll', requestUpdate, { passive: true })
+    window.addEventListener('resize', requestUpdate)
+    media.addEventListener?.('change', requestUpdate)
+
+    return () => {
+      if (raf) {
+        window.cancelAnimationFrame(raf)
+      }
+      window.removeEventListener('scroll', requestUpdate)
+      window.removeEventListener('resize', requestUpdate)
+      media.removeEventListener?.('change', requestUpdate)
+      root.style.removeProperty('--scroll-progress')
+    }
+  }, [])
 
   const handleAdd = async () => {
     if (!product?.id) return
+
+    const selectedVariant = product.variants?.[variantIdx] ?? null
+
     setAdding(true)
     setError('')
+
     try {
-      await addItem(product.id, qty)
+      await addItem(product.id, qty, selectedVariant?.months)
       setAdded(true)
       setTimeout(() => {
         setAdded(false)
         setShowPopup(false)
       }, 1500)
-    } catch (e: any) {
-      setError(e.message)
+    } catch (event: any) {
+      setError(event.message)
     }
+
     setAdding(false)
   }
 
@@ -96,25 +160,26 @@ export default function ProductDetailPage() {
   const hasVariants = variants.length > 0
   const selected = variants[variantIdx] ?? null
   const displayPrice = selected?.price ?? null
-
-  // Economy vs 1 month
+  const totalPrice = displayPrice != null ? displayPrice * qty : 0
   const base1m = variants[0]
   const saving = selected && base1m && selected !== base1m
     ? Math.round((1 - (selected.price / selected.months) / (base1m.price / base1m.months)) * 100)
     : 0
 
-  // Shipping info
-  const totalPrice = displayPrice != null ? displayPrice * qty : 0
-  const freeShipping = totalPrice >= 30
+  const shippingMessage = totalPrice >= 30
+    ? '✓ Livraison offerte'
+    : `🚚 Livraison 10€ · encore €${displayPrice != null ? Math.max(0, 30 - totalPrice).toFixed(2) : '—'} pour la gratuité`
+
+  const selectedSummary = [selected?.label, formatVariantQty(selected?.qty_g)]
+    .filter(Boolean)
+    .join(' · ') || 'Choisissez une variante'
 
   return (
-    <div className={styles.pageWrap}>
-
-      {/* ── Sticky top: image + title + category ── */}
+    <div ref={pageRef} className={styles.pageWrap}>
       <div className={styles.stickyHeader}>
         <button className={styles.back} onClick={() => router.back()}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
+            <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
         </button>
 
@@ -131,7 +196,6 @@ export default function ProductDetailPage() {
           <h1 className={styles.title}>{product.name}</h1>
           {product.short_desc && <p className={styles.shortDesc}>{product.short_desc}</p>}
 
-          {/* Price preview */}
           {displayPrice != null && (
             <div className={styles.pricePreview}>
               <span className={styles.priceAmount}>€{displayPrice.toFixed(2)}</span>
@@ -140,12 +204,31 @@ export default function ProductDetailPage() {
               )}
             </div>
           )}
+
+          {hasVariants && (
+            <div className={styles.mobilePurchaseCard}>
+              <div className={styles.mobilePurchaseSummary}>
+                <div className={styles.mobilePurchaseCopy}>
+                  <span className={styles.mobilePurchaseLabel}>{selectedSummary}</span>
+                  <span className={styles.mobilePurchasePrice}>
+                    €{displayPrice != null ? displayPrice.toFixed(2) : '—'}
+                  </span>
+                </div>
+                <button
+                  className={styles.mobilePurchaseButton}
+                  onClick={() => setShowPopup(true)}
+                  disabled={!hasVariants}
+                >
+                  Ajouter au panier
+                </button>
+              </div>
+              <span className={styles.mobilePurchaseShipping}>{shippingMessage}</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ── Scrollable description ── */}
       <div className={styles.scrollContent}>
-        {/* Achat unitaire badge */}
         <div className={styles.unitBadge}>
           <span>📦</span>
           <span>
@@ -161,32 +244,36 @@ export default function ProductDetailPage() {
           />
         )}
 
-        {/* Shipping info */}
         <div className={styles.shippingInfo}>
-          {freeShipping ? (
+          {totalPrice >= 30 ? (
             <span className={styles.shippingFree}>✓ Livraison offerte</span>
           ) : (
             <span>🚚 Livraison 10€ · offerte dès 30€</span>
           )}
         </div>
+
+        <div className={`${styles.bottomCta} ${mobileCtaVisible ? styles.bottomCtaVisible : ''}`}>
+          <div className={styles.bottomCtaContent}>
+            <div className={styles.bottomCtaMeta}>
+              <span className={styles.bottomCtaLabel}>{selectedSummary}</span>
+              <span className={styles.bottomCtaPrice}>
+                €{displayPrice != null ? displayPrice.toFixed(2) : '—'}
+              </span>
+            </div>
+            <button
+              className={styles.ctaButton}
+              onClick={() => setShowPopup(true)}
+              disabled={!hasVariants}
+            >
+              {hasVariants ? 'Ajouter au panier' : 'Indisponible'}
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* ── Fixed bottom CTA ── */}
-      <div className={styles.bottomCta}>
-        <button
-          className={styles.ctaButton}
-          onClick={() => setShowPopup(true)}
-          disabled={!hasVariants}
-        >
-          {hasVariants ? 'Ajouter au panier' : 'Indisponible'}
-        </button>
-      </div>
-
-      {/* ── Popup: liquid glass variant selector ── */}
       {showPopup && (
         <div className={styles.overlay}>
           <div className={styles.popup} ref={popupRef}>
-            {/* Popup header */}
             <div className={styles.popupHeader}>
               <div>
                 <h3 className={styles.popupTitle}>{product.name}</h3>
@@ -194,57 +281,46 @@ export default function ProductDetailPage() {
               </div>
               <button className={styles.popupClose} onClick={() => setShowPopup(false)}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6L6 18M6 6l12 12"/>
+                  <path d="M18 6L6 18M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
-            {/* Variant selector */}
             <div className={styles.variantGrid}>
-              {variants.map((v, i) => {
-                const isActive = variantIdx === i
-                const s = base1m
-                  ? Math.round((1 - (v.price / v.months) / (base1m.price / base1m.months)) * 100)
+              {variants.map((variant, index) => {
+                const isActive = variantIdx === index
+                const variantSaving = base1m
+                  ? Math.round((1 - (variant.price / variant.months) / (base1m.price / base1m.months)) * 100)
                   : 0
+
                 return (
                   <button
-                    key={i}
+                    key={`${variant.label}-${variant.months}`}
                     className={`${styles.variantCard} ${isActive ? styles.variantActive : ''}`}
-                    onClick={() => setVariantIdx(i)}
+                    onClick={() => setVariantIdx(index)}
                   >
-                    <div className={styles.variantQty}>
-                      {v.qty_g >= 1000
-                        ? `${(v.qty_g / 1000).toFixed(v.qty_g % 1000 === 0 ? 0 : 2)} kg`
-                        : `${v.qty_g} g`}
-                    </div>
-                    <div className={styles.variantLabel}>{v.label}</div>
-                    <div className={styles.variantPrice}>€{v.price.toFixed(2)}</div>
-                    {s > 0 && <span className={styles.variantSave}>-{s}%</span>}
+                    <div className={styles.variantQty}>{formatVariantQty(variant.qty_g) ?? '—'}</div>
+                    <div className={styles.variantLabel}>{variant.label}</div>
+                    <div className={styles.variantPrice}>€{variant.price.toFixed(2)}</div>
+                    {variantSaving > 0 && <span className={styles.variantSave}>-{variantSaving}%</span>}
                   </button>
                 )
               })}
             </div>
 
-            {/* Quantity */}
             <div className={styles.popupQty}>
               <span className={styles.popupQtyLabel}>Quantité</span>
               <div className={styles.qtyControl}>
-                <button onClick={() => setQty(q => Math.max(1, q - 1))} disabled={qty <= 1}>−</button>
+                <button onClick={() => setQty((current) => Math.max(1, current - 1))} disabled={qty <= 1}>−</button>
                 <span>{qty}</span>
-                <button onClick={() => setQty(q => Math.min(99, q + 1))}>+</button>
+                <button onClick={() => setQty((current) => Math.min(99, current + 1))}>+</button>
               </div>
             </div>
 
-            {/* Shipping preview */}
             <div className={styles.popupShipping}>
-              {displayPrice != null && displayPrice * qty >= 30 ? (
-                <span className={styles.shippingFree}>✓ Livraison offerte</span>
-              ) : (
-                <span>🚚 Livraison 10€ · encore €{displayPrice != null ? Math.max(0, 30 - displayPrice * qty).toFixed(2) : '—'} pour la gratuité</span>
-              )}
+              {shippingMessage}
             </div>
 
-            {/* Total + Add */}
             <div className={styles.popupFooter}>
               <div className={styles.popupTotal}>
                 <span className={styles.popupTotalLabel}>Total</span>

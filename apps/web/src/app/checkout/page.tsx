@@ -9,6 +9,13 @@ import styles from './page.module.css'
 
 type Step = 'address' | 'shipping' | 'payment'
 
+function formatVariantQty(value?: number | null) {
+  if (value == null) return null
+  return value >= 1000
+    ? `${(value / 1000).toFixed(value % 1000 === 0 ? 0 : 2)} kg`
+    : `${value} g`
+}
+
 export default function CheckoutPage() {
   return (
     <Suspense
@@ -48,15 +55,30 @@ function CheckoutContent() {
     ]).then(([o, a]) => {
       setOrder(o)
       setAddresses(a)
+      setSelectedShipping(o.shipping_address_id ?? null)
+      setSelectedBilling(o.billing_address_id ?? null)
+      setSelectedShippingMethod(o.shipping_method ?? '')
+      if (o.shipping_address_id) {
+        void loadRates(o.shipping_address_id, o.shipping_method ?? undefined)
+      }
       if (a.length === 0) setShowAddressForm(true)
       setLoading(false)
     }).catch(() => { router.push('/cart') })
-  }, [orderId])
+  }, [orderId, router])
 
-  const loadRates = async (addressId: number) => {
+  const loadRates = async (addressId: number, preferredMethod?: string) => {
     const r = await shippingApi.getRates(addressId) as { items: ShippingRate[] }
     setShippingRates(r.items)
-    if (r.items.length > 0) setSelectedShippingMethod(r.items[0].method)
+    if (r.items.length === 0) {
+      setSelectedShippingMethod('')
+      return
+    }
+
+    const method = preferredMethod && r.items.some((item) => item.method === preferredMethod)
+      ? preferredMethod
+      : r.items[0].method
+
+    setSelectedShippingMethod(method)
   }
 
   const handleAddressSubmit = async () => {
@@ -66,7 +88,7 @@ function CheckoutContent() {
     try {
       const updated = await orderApi.setAddresses(orderId, selectedShipping, selectedBilling || undefined) as Order
       setOrder(updated)
-      await loadRates(selectedShipping)
+      await loadRates(selectedShipping, updated.shipping_method ?? undefined)
       setStep('shipping')
     } catch (e: any) { setError(e.message) }
     setSubmitting(false)
@@ -303,15 +325,27 @@ function CheckoutContent() {
               <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {order.items.map(it => (
                   <div key={it.id} className={styles.orderItem}>
-                    <span className={styles.orderItemName}>{it.product_name}</span>
+                    <div className={styles.orderItemDetails}>
+                      <span className={styles.orderItemName}>{it.product_name}</span>
+                      {(it.variant_label || it.variant_qty_g != null) && (
+                        <span className={styles.orderItemMeta}>
+                          {[it.variant_label, formatVariantQty(it.variant_qty_g)]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </span>
+                      )}
+                    </div>
                     <span className={styles.orderItemQty}>×{it.quantity}</span>
                     <span>€{it.line_total.toFixed(2)}</span>
                   </div>
                 ))}
                 <div className="divider" style={{ margin: '4px 0' }} />
                 <div className={styles.orderSummaryRow}><span>Sous-total</span><span>€{order.subtotal_amount?.toFixed(2)}</span></div>
-                <div className={styles.orderSummaryRow}><span>Livraison</span><span>{order.shipping_amount ? `€${order.shipping_amount.toFixed(2)}` : '—'}</span></div>
-                <div className={styles.orderSummaryRow}><span>TVA</span><span>{order.tax_amount ? `€${order.tax_amount.toFixed(2)}` : '—'}</span></div>
+                <div className={styles.orderSummaryRow}>
+                  <span>Livraison</span>
+                  <span>{order.shipping_amount === 0 ? 'Offerte' : `€${order.shipping_amount.toFixed(2)}`}</span>
+                </div>
+                <div className={styles.orderSummaryRow}><span>TVA</span><span>€{order.tax_amount.toFixed(2)}</span></div>
                 <div className="divider" style={{ margin: '4px 0' }} />
                 <div className={styles.orderTotal}><span>Total</span><span>€{order.grand_total_amount?.toFixed(2)}</span></div>
               </div>

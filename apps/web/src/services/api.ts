@@ -154,8 +154,12 @@ export const stackApi = {
 
 export const cartApi = {
   get: () => request('/cart', {}, true),
-  addItem: (product_id: number, quantity: number) =>
-    request('/cart/items', { method: 'POST', body: JSON.stringify({ product_id, quantity }) }, true),
+  addItem: (product_id: number, quantity: number, variant_months?: number) =>
+    request(
+      '/cart/items',
+      { method: 'POST', body: JSON.stringify({ product_id, quantity, variant_months }) },
+      true,
+    ),
   updateItem: (item_id: number, quantity: number) =>
     request(`/cart/items/${item_id}`, { method: 'PATCH', body: JSON.stringify({ quantity }) }, true),
   deleteItem: (item_id: number) =>

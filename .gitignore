@@ -10,6 +10,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+.npm-cache/
 .next/
 out/
 dist/
@@ -26,6 +27,7 @@ __pycache__/
 venv/
 ENV/
 env/
+.deps/
 pip-wheel-metadata/
 .pytest_cache/
 .mypy_cache/

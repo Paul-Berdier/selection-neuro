@@ -39,8 +39,13 @@ def stripe_checkout_session(
     _ = order.items  # ensure loaded
     line_items = []
     for it in order.items:
+        variant_bits = [getattr(it, "variant_label", None)]
+        variant_qty = getattr(it, "variant_qty_g", None)
+        if variant_qty is not None:
+            variant_bits.append(f"{float(variant_qty):g} g")
+
         line_items.append(StripeLineItem(
-            name=it.product_name,
+            name=" · ".join(part for part in [it.product_name, " | ".join(bit for bit in variant_bits if bit)] if part),
             amount_eur=float(it.unit_price),
             quantity=it.quantity,
         ))

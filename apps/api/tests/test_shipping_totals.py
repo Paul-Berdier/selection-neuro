@@ -63,7 +63,18 @@ def test_shipping_rates_and_totals_recompute(client, admin_token):
     # attach shipping address triggers recompute
     r = client.put(f"/orders/{oid}/addresses", headers=h_user, json={"shipping_address_id": address_id})
     assert r.status_code == 200, r.text
+    order = r.json()
+    assert order["shipping_amount"] == 10.0
+    assert order["grand_total_amount"] == 24.0
 
     # choose express and recompute again
     r = client.put(f"/orders/{oid}/shipping", headers=h_user, json={"shipping_method": "express"})
     assert r.status_code == 200, r.text
+
+    r = client.get(f"/orders/{oid}", headers=h_user)
+    assert r.status_code == 200, r.text
+    updated = r.json()
+    assert updated["shipping_method"] == "express"
+    assert updated["shipping_address_id"] == address_id
+    assert updated["shipping_amount"] == 14.9
+    assert updated["grand_total_amount"] == 29.88

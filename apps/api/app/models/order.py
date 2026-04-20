@@ -20,6 +20,7 @@ class Order(Base):
 
     status: Mapped[str] = mapped_column(String(32), nullable=False, server_default=text("'created'"))
     payment_status: Mapped[str] = mapped_column(String(32), nullable=False, server_default=text("'unpaid'"))
+    payment_provider: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
     currency: Mapped[str] = mapped_column(String(8), nullable=False, server_default=text("'EUR'"))
 
@@ -34,6 +35,17 @@ class Order(Base):
 
     shipping_method: Mapped[str] = mapped_column(String(32), nullable=False, server_default=text("'standard'"))
     tax_rate: Mapped[float] = mapped_column(Numeric(5, 4), nullable=False, server_default=text("0.2000"))
+    shipping_address_id: Mapped[int | None] = mapped_column(
+        ForeignKey("address.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    billing_address_id: Mapped[int | None] = mapped_column(
+        ForeignKey("address.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    stripe_session_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    stripe_payment_intent_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")

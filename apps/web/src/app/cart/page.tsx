@@ -8,6 +8,13 @@ import { orderApi } from '@/services/api'
 import { useRouter } from 'next/navigation'
 import styles from './page.module.css'
 
+function formatVariantQty(value?: number | null) {
+  if (value == null) return null
+  return value >= 1000
+    ? `${(value / 1000).toFixed(value % 1000 === 0 ? 0 : 2)} kg`
+    : `${value} g`
+}
+
 export default function CartPage() {
   const { cart, updateItem, removeItem, loading } = useCart()
   const { user } = useAuth()
@@ -64,7 +71,14 @@ export default function CartPage() {
               </div>
               <div className={styles.itemInfo}>
                 <h3 className={styles.itemName}>{item.product_name}</h3>
-                <span className={styles.itemPrice}>€{item.unit_price.toFixed(2)}/mois</span>
+                <span className={styles.itemPrice}>€{item.unit_price.toFixed(2)}</span>
+                {(item.variant_label || item.variant_qty_g != null) && (
+                  <span className={styles.itemMeta}>
+                    {[item.variant_label, formatVariantQty(item.variant_qty_g)]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </span>
+                )}
               </div>
               <div className={styles.itemControls}>
                 <div className={styles.qtyWrap}>

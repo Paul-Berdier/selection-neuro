@@ -130,12 +130,20 @@
 
 .orderItem {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   font-size: 13px;
 }
 
-.orderItemName { flex: 1; color: var(--text-2); }
+.orderItemDetails {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.orderItemName { color: var(--text-2); }
+.orderItemMeta { color: var(--text-3); font-size: 11px; }
 .orderItemQty { color: var(--text-3); }
 
 .orderSummaryRow {

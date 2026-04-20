@@ -32,8 +32,8 @@
   --border:       var(--ink-light);
   --border-strong:var(--ink-mid);
   --text:         var(--ink-strong);
-  --text-2:       var(--ink-soft);
-  --text-3:       rgba(10,10,12,0.32);
+  --text-2:       rgba(10,10,12,0.58);
+  --text-3:       rgba(10,10,12,0.46);
   --accent:       #0a0a0c;
   --accent-blue:  #2563eb;
   --success:      #16a34a;
@@ -236,6 +236,7 @@ tr:hover td { background: rgba(255,255,255,0.5); }
 .section      { padding: 56px 0; }
 .section-title{ font-size: 1.6rem; font-weight: 500; margin-bottom: 28px; color: var(--text); }
 
+a, button { -webkit-tap-highlight-color: transparent; }
 a   { color: inherit; text-decoration: none; }
 .text-accent   { color: var(--accent); }
 .text-muted    { color: var(--text-2); }
